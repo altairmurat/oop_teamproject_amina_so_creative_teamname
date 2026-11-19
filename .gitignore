@@ -1,0 +1,10 @@
+build/
+atm
+atm.exe
+build_test_bank
+tests/_tmp_*
+*.o
+*.d
+.vscode/
+.idea/
+cmake-build-*/
