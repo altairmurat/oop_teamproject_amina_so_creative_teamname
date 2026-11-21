@@ -2,10 +2,10 @@
 #pragma once
 #include <string>
 #include "Constants.h"
-using namespace std;
 
 class ATM;
 class Account;
+class Bank;
 
 // Abstract base class of every transaction (deposit, withdrawal, cash transfer, account transfer).
 // Rules for subclasses:
@@ -17,11 +17,11 @@ class Account;
 class Transaction {
 public:
     Transaction(ATM& atm, Account& account);
-    virtual ~Transaction() = 0;
+    virtual ~Transaction() {};
 
     virtual void execute() = 0; // throws ATMException on failure
-    virtual string type() const = 0; // e.g. "Cash Deposit"
-    virtual string describe() const = 0; // one history line
+    virtual std::string type() const = 0; // e.g. "Cash Deposit"
+    virtual std::string describe() const = 0; // one history line
 
     int transactionID() const { return id; } // 0 until transaction succeded
     long long transactionAmount() const { return amount; } // money moved w/out the fee
@@ -31,10 +31,8 @@ public:
 
 protected:
     void commit(); // assigns a unique ID
-    string tr(const string& key) const; // messages in the ATM'S current language
-    BillCount readBills() const; // asks for a count per denomination, max 50 bills
-
-    // АЛЬТАИР сделай Constants.h пж, BillCount твой
+    std::string tr(const std::string& key) const; // messages in the ATM'S current language
+    Bank& issuingBank() const; // asks for a count per denomination, max 50 bills
 
     ATM& transactionATM;
     Account& transactionAccount;
