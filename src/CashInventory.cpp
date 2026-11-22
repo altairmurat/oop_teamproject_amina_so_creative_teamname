@@ -1,4 +1,6 @@
+// Owner: Altair (Person B)
 #include "CashInventory.h"
+#include "Exceptions.h"
 #include <algorithm>
 #include <stdexcept>
 
@@ -42,6 +44,7 @@ void CashInventory::addBill(int denom, int count) {
 }
 
 bool CashInventory::removeBills(const BillCount& removed) {
+    // check first so we never end up in a half-removed state
     for (int denom : Constants::DENOMINATIONS) {
         if (removed.get(denom) < 0 || bills.at(denom) < removed.get(denom)) {
             return false;
@@ -75,6 +78,7 @@ long long CashInventory::getTotalCash() const {
     return sum;
 }
 
+// this is to calculate how many bills of each denomination to give out (fewest bills first)
 bool CashInventory::computeGreedyDispense(long long amount, BillCount& outPlan) const {
     if (amount <= 0 || amount % Constants::DENOM_1000 != 0) {
         return false;
@@ -83,6 +87,7 @@ bool CashInventory::computeGreedyDispense(long long amount, BillCount& outPlan) 
     BillCount plan;
     long long left = amount;
 
+    // loop goes from 50,000 down to 1,000 because the map uses std::greater
     for (const auto& [denom, avail] : bills) {
         if (left <= 0) break;
         long long need = left / denom;
@@ -93,6 +98,7 @@ bool CashInventory::computeGreedyDispense(long long amount, BillCount& outPlan) 
         }
     }
 
+    // if left != 0, we don't have the right combination of bills
     if (left != 0) {
         return false;
     }
@@ -119,8 +125,7 @@ bool CashInventory::tryDispense(long long amount, BillCount& dispensedOut) {
 BillCount CashInventory::dispense(long long amount) {
     BillCount out;
     if (!tryDispense(amount, out)) {
-        // swap to InsufficientCashException once Exceptions.h is merged
-        throw std::runtime_error("Insufficient cash in ATM.");
+        throw InsufficientCashException("Error: insufficient cash in the ATM.");
     }
     return out;
 }

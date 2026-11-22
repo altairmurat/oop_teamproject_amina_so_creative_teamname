@@ -1,5 +1,5 @@
+// Owner: Altair (Person B)
 #pragma once
-
 #include "ATM.h"
 
 class SingleBankATM : public ATM {

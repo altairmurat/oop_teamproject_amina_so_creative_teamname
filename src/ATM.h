@@ -1,11 +1,12 @@
+// Owner: Altair (Person B)
 #pragma once
-
 #include <string>
 #include "Constants.h"
 #include "CashInventory.h"
 
 class Card;
 
+// abstract base class for SingleBankATM and MultiBankATM
 class ATM {
 public:
     ATM(const std::string& serialNumber,
@@ -15,6 +16,7 @@ public:
 
     virtual ~ATM() = default;
 
+    // this is to let each ATM type decide which cards it accepts (polymorphism)
     virtual bool isCardValid(const Card& card) const = 0;
     virtual std::string getType() const = 0;
 

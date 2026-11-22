@@ -1,3 +1,4 @@
+// Owner: Altair (Person B)
 #include "ATM.h"
 #include <cctype>
 #include <stdexcept>
@@ -11,6 +12,7 @@ ATM::ATM(const std::string& serialNumber,
       languageMode(languageMode),
       currentLanguage(Language::English),
       inventory(initialInventory) {
+    // make sure the serial number is strictly 6 digits
     if (serialNumber.size() != Constants::SERIAL_NUMBER_LENGTH) {
         throw std::invalid_argument("serial number must be 6 digits");
     }
@@ -29,6 +31,7 @@ bool ATM::isPrimaryBank(const std::string& bankName) const {
 }
 
 void ATM::setLanguage(Language lang) {
+    // unilingual ATMs are locked to English
     if (languageMode == LanguageMode::Unilingual) {
         currentLanguage = Language::English;
         return;

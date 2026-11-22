@@ -1,5 +1,8 @@
+// Owner: Altair (Person B)
 #include "ConsoleUI.h"
 #include "ATM.h"
+#include "Exceptions.h"
+#include "Messages.h"
 #include <cctype>
 #include <limits>
 #include <stdexcept>
@@ -40,6 +43,7 @@ std::string ConsoleUI::readLine(const std::string& prompt) {
             throw std::runtime_error("input stream closed");
         }
         std::string cleaned = trim(line);
+        // this is to catch '/' at any prompt and print the ATM/account snapshot
         if (cleaned.size() == 1 && cleaned[0] == Constants::SNAPSHOT_COMMAND) {
             triggerSnapshot();
             continue;
@@ -107,19 +111,17 @@ long long ConsoleUI::readLongLong(const std::string& prompt, long long minVal, l
 }
 
 BillCount ConsoleUI::readBills(int maxTotalBills) {
-    while (true) {
-        BillCount bills;
-        for (int denom : Constants::DENOMINATIONS) {
-            std::string prompt = std::to_string(denom) + " KRW bills: ";
-            int cnt = readInt(prompt, 0, maxTotalBills);
-            bills.set(denom, cnt);
-        }
-        if (bills.totalBills() > maxTotalBills) {
-            std::cout << "Too many bills (max " << maxTotalBills << "). Try again.\n";
-            continue;
-        }
-        return bills;
+    BillCount bills;
+    for (int denom : Constants::DENOMINATIONS) {
+        std::string prompt = Messages::get("prompt.bills_of", Language::English) + std::to_string(denom) + ": ";
+        int cnt = readInt(prompt, 0, 1000000);
+        bills.set(denom, cnt);
     }
+    // enforce the 50-bill limit per transaction (REQ4.2)
+    if (bills.totalBills() > maxTotalBills) {
+        throw LimitExceededException(Messages::get("err.too_many_bills", Language::English));
+    }
+    return bills;
 }
 
 Language ConsoleUI::promptLanguage(const ATM& atm) {

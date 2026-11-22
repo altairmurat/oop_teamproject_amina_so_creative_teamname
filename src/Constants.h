@@ -1,17 +1,21 @@
+// Owner: Altair (Person B)
 #pragma once
 #include <array>
 #include <stdexcept>
 
 namespace Constants {
+    // supported bill denominations in KRW
     inline constexpr int DENOM_50000 = 50000;
     inline constexpr int DENOM_10000 = 10000;
     inline constexpr int DENOM_5000  = 5000;
     inline constexpr int DENOM_1000  = 1000;
 
+    // descending order so we can iterate from largest to smallest for greedy dispensing
     inline constexpr std::array<int, 4> DENOMINATIONS = {
         DENOM_50000, DENOM_10000, DENOM_5000, DENOM_1000
     };
 
+    // transaction and session limits from the spec
     inline constexpr int MAX_BILLS_PER_DEPOSIT       = 50;
     inline constexpr int MAX_WITHDRAWALS_PER_SESSION = 3;
     inline constexpr int MAX_PASSWORD_ATTEMPTS       = 3;
@@ -20,6 +24,7 @@ namespace Constants {
     inline constexpr int SERIAL_NUMBER_LENGTH        = 6;
     inline constexpr int ACCOUNT_NUMBER_DIGITS       = 12;
 
+    // typing '/' at any input prompt prints the snapshot
     inline constexpr char SNAPSHOT_COMMAND = '/';
 }
 
@@ -28,13 +33,12 @@ enum class LanguageMode {
     Bilingual
 };
 
-// Note: Alan also defined Language in Messages.h on his branch,
-// we'll keep just one when merging everything into main.
 enum class Language {
     English,
     Korean
 };
 
+// this is to store bill counts for all four denominations in one place
 struct BillCount {
     int count50000 = 0;
     int count10000 = 0;
@@ -68,10 +72,12 @@ struct BillCount {
         set(denom, get(denom) + count);
     }
 
+    // total number of physical bills
     int totalBills() const {
         return count50000 + count10000 + count5000 + count1000;
     }
 
+    // total value in KRW
     long long total() const {
         return static_cast<long long>(count50000) * Constants::DENOM_50000 +
                static_cast<long long>(count10000) * Constants::DENOM_10000 +

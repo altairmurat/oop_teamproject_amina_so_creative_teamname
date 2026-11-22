@@ -1,5 +1,5 @@
+// Owner: Altair (Person B)
 #pragma once
-
 #include <functional>
 #include <iostream>
 #include <string>
@@ -7,6 +7,7 @@
 
 class ATM;
 
+// this is to handle all console input/output safely and catch '/' for snapshots
 class ConsoleUI {
 public:
     static void setSnapshotCallback(std::function<void()> callback);
