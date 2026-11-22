@@ -1,6 +1,6 @@
 #pragma once
-#include "Transaction.h"
 #include <string>
+#include "Transaction.h"
 
 class CashTransferTransaction : public Transaction {
 public:

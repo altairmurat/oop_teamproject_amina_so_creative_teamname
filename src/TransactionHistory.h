@@ -1,5 +1,4 @@
 #pragma once
-#include <iostream>
 #include <string>
 #include <vector>
 
@@ -20,13 +19,16 @@ struct SessionLog {
 // global history where only succesful transactions is recorded and grouped by session
 class TransactionHistory {
 public:
+    // добавил global() чтобы в Session.cpp было проще подключать вместо globalHistoryLog
+    static TransactionHistory& global();
+
     void startSession(const std::string& cardNumber);
     void addTransaction(int id, const std::string& cardNumber,
         const std::string& type, long long amount, const std::string& details);
 
     bool isEmpty() const;
     std::string format() const;
-    void print(std::ostream& out = std::cout) const;
+    void print() const;
     bool writeToFile(const std::string& filename) const;
 
 private:

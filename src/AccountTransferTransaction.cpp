@@ -1,11 +1,11 @@
 #include "AccountTransferTransaction.h"
+#include <iostream>
 #include "ATM.h"
-#include "Account.h"
 #include "Bank.h"
+#include "Account.h"
+#include "FeePolicy.h"
 #include "ConsoleUI.h"
 #include "Exceptions.h"
-#include "FeePolicy.h"
-#include <iostream>
 
 using namespace std;
 
@@ -22,28 +22,27 @@ void AccountTransferTransaction::execute() {
         throw InvalidInputException(tr("same_account"));
     }
 
-    long long transferAmount = ConsoleUI::readPositiveAmount(tr("enter_amount"));
+    long long money = ConsoleUI::readPositiveAmount(tr("enter_amount"));
 
     // комиссию беру из FeePolicy, названия методов не меняйте пж или скажите если поменяете
     // fee is calculated based on if source/dest bank is matched with primary bank
-    string primaryBank = transactionATM.getPrimaryBankName();
-    bool srcPrimary = (transactionAccount.getBankName() == primaryBank);
-    bool destPrimary = (dest->getBankName() == primaryBank);
-    long long transferFee = FeePolicy::accountTransferFee(srcPrimary, destPrimary);
+    bool srcPrimary = transactionATM.isPrimaryBank(transactionAccount.getBankName());
+    bool dstPrimary = transactionATM.isPrimaryBank(dest->getBankName());
+    long long f = FeePolicy::accountTransferFee(srcPrimary, dstPrimary);
 
     // balance must be checked before anything is changed
-    if (transactionAccount.getBalance() < transferAmount + transferFee) {
+    if (!transactionAccount.canWithdraw(money + f)) {
         throw InsufficientFundsException(tr("insufficient_funds"));
     }
 
-    amount = transferAmount;
-    fee = transferFee;
+    amount = money;
+    fee = f;
     destAccountNumber = dest->getAccountNumber();
 
     Bank::transfer(transactionAccount, *dest, amount, fee);
 
-    cout << tr("fee_notice") << fee << "\n";
-    cout << tr("transfer_success") << "\n";
+    ConsoleUI::showMessage(tr("fee_notice") + to_string(fee));
+    ConsoleUI::showMessage(tr("transfer_success"));
 
     commit();
 }
@@ -53,8 +52,6 @@ string AccountTransferTransaction::type() const {
 }
 
 string AccountTransferTransaction::describe() const {
-    return "Account Transfer: " + transactionAccount.getAccountNumber()
-        + " -> " + destAccountNumber
-        + " | Amount: " + to_string(amount) + " KRW"
-        + " | Fee: " + to_string(fee) + " KRW";
+    return "Account Transfer " + transactionAccount.getAccountNumber()
+        + " -> " + destAccountNumber + " (" + to_string(amount) + " Won)";
 }
