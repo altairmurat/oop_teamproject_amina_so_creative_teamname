@@ -1,3 +1,4 @@
+// Owner: Alan (Person D)
 #pragma once
 #include <string>
 #include <vector>
@@ -16,10 +17,9 @@ struct SessionLog {
     std::vector<TransactionRecord> transactions;
 };
 
-// global history where only succesful transactions is recorded and grouped by session
+// Global history of successful transactions grouped by session
 class TransactionHistory {
 public:
-    // добавил global() чтобы в Session.cpp было проще подключать вместо globalHistoryLog
     static TransactionHistory& global();
 
     void startSession(const std::string& cardNumber);

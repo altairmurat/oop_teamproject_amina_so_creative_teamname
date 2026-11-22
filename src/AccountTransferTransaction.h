@@ -1,3 +1,4 @@
+// Owner: Alan (Person D)
 #pragma once
 #include <string>
 #include "Transaction.h"

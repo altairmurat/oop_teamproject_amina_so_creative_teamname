@@ -1,3 +1,4 @@
+// Owner: Alan (Person D)
 #include "AccountTransferTransaction.h"
 #include <iostream>
 #include "ATM.h"
@@ -24,8 +25,7 @@ void AccountTransferTransaction::execute() {
 
     long long money = ConsoleUI::readPositiveAmount(tr("enter_amount"));
 
-    // комиссию беру из FeePolicy, названия методов не меняйте пж или скажите если поменяете
-    // fee is calculated based on if source/dest bank is matched with primary bank
+    // fee depends on whether source and destination banks match the ATM's primary bank
     bool srcPrimary = transactionATM.isPrimaryBank(transactionAccount.getBankName());
     bool dstPrimary = transactionATM.isPrimaryBank(dest->getBankName());
     long long f = FeePolicy::accountTransferFee(srcPrimary, dstPrimary);

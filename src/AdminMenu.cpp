@@ -1,3 +1,4 @@
+// Owner: Alan (Person D)
 #include "AdminMenu.h"
 #include <iostream>
 #include <string>
@@ -23,7 +24,6 @@ void AdminMenu::run(const ATM& atm, const TransactionHistory& history) {
         cout << "\n" << Messages::get("history_header", lang) << "\n";
         history.print();
 
-        // формат названия файла взял как в примере, если в пдф по другому потом поправим
         string filename = atm.getPrimaryBankName() + " ATM " + atm.getSerialNumber() + " transac_history.txt";
         if (history.writeToFile(filename)) {
             ConsoleUI::showMessage(Messages::get("history_saved", lang) + filename);

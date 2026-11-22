@@ -1,9 +1,9 @@
+// Owner: Alan (Person D)
 #pragma once
 #include <stdexcept>
 #include <string>
 
-// ребята используйте эти классы как основу для ошибок, названия пж не меняйте
-// base exception class, is catched in Session and session will be ended (REQ9.1)
+// Base exception class; caught in Session to end the current session (REQ9.1)
 class ATMException : public std::runtime_error {
 public:
     ATMException(const std::string& message) : std::runtime_error(message) {}

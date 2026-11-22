@@ -1,3 +1,4 @@
+// Owner: Alan (Person D)
 #include "CashTransferTransaction.h"
 #include <iostream>
 #include "ATM.h"
@@ -21,11 +22,10 @@ void CashTransferTransaction::execute() {
     }
 
     ConsoleUI::showMessage(tr("insert_cash_bills"));
-    // поменял на ConsoleUI::readBills тк в Transaction его нету в мейне
     BillCount bills = ConsoleUI::readBills(Constants::MAX_BILLS_PER_DEPOSIT);
     long long total = bills.total();
 
-    // fee is always 1000 won and it is deducted from inserted cash, инвентарь обновляется ниже
+    // 1000 KRW fee is deducted from the inserted cash
     long long f = FeePolicy::cashTransferFee();
     if (total <= f) {
         throw InvalidInputException(tr("cash_transfer_too_small"));
@@ -40,7 +40,7 @@ void CashTransferTransaction::execute() {
     fee = f;
     destAccountNumber = dest->getAccountNumber();
 
-    // деньги зачисляем через банк получателя а наличку кидаем в банкомат
+    // deposit transfer amount to destination bank and add physical bills to ATM
     destBank->deposit(*dest, amount);
     transactionATM.addCash(bills);
 

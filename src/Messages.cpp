@@ -1,9 +1,10 @@
+// Owner: Alan (Person D)
 #include "Messages.h"
 #include <map>
 
 using namespace std;
 
-// оба словаря должны иметь одинаковые ключи, если что-то добавляете то в оба пж
+// Keep English and Korean maps in sync with the same keys
 string Messages::get(const string& key, Language lang) {
     static map<string, string> en;
     static map<string, string> kr;
@@ -46,7 +47,7 @@ string Messages::get(const string& key, Language lang) {
         en["history_empty"] = "No transactions recorded yet.";
         en["history_saved"] = "Transaction history saved to file: ";
 
-        // ключи от Амины (deposit / withdrawal / bills), оставил названия как у нее в коде
+        // deposit / withdrawal / bills keys used by Transaction classes
         en["prompt.bills_of"] = "Number of bills for KRW ";
         en["err.too_many_bills"] = "Error: too many bills (maximum 50 per transaction).";
         en["deposit.choose_type"] = "Deposit type - 1) Cash  2) Check: ";
@@ -134,6 +135,6 @@ string Messages::get(const string& key, Language lang) {
         if (en.count(key)) return en[key];
     }
 
-    // key is returned if not founded so program is not crashed
+    // fallback to key if missing
     return key;
 }
