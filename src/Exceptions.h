@@ -1,25 +1,47 @@
-// TEMPORARY version so Person C's code compiles. Owner: Person D -- replace/extend with the real one.
+// Owner: Alan (Person D)
 #pragma once
 #include <stdexcept>
 #include <string>
 
+// Base exception class; caught in Session to end the current session (REQ9.1)
 class ATMException : public std::runtime_error {
 public:
-    explicit ATMException(const std::string& msg) : std::runtime_error(msg) {}
+    ATMException(const std::string& message) : std::runtime_error(message) {}
 };
-class InvalidInputException : public ATMException {
+
+
+class InvalidCardException : public ATMException {
 public:
-    explicit InvalidInputException(const std::string& msg) : ATMException(msg) {}
+    InvalidCardException(const std::string& message = "Invalid card.")
+        : ATMException(message) {}
 };
+
+class WrongPasswordException : public ATMException {
+public:
+    WrongPasswordException(const std::string& message = "Incorrect password.")
+        : ATMException(message) {}
+};
+
 class InsufficientFundsException : public ATMException {
 public:
-    explicit InsufficientFundsException(const std::string& msg) : ATMException(msg) {}
+    InsufficientFundsException(const std::string& message = "Insufficient funds in account.")
+        : ATMException(message) {}
 };
+
 class InsufficientCashException : public ATMException {
 public:
-    explicit InsufficientCashException(const std::string& msg) : ATMException(msg) {}
+    InsufficientCashException(const std::string& message = "Insufficient cash in ATM.")
+        : ATMException(message) {}
 };
+
 class LimitExceededException : public ATMException {
 public:
-    explicit LimitExceededException(const std::string& msg) : ATMException(msg) {}
+    LimitExceededException(const std::string& message = "Transaction limit exceeded.")
+        : ATMException(message) {}
+};
+
+class InvalidInputException : public ATMException {
+public:
+    InvalidInputException(const std::string& message = "Invalid input.")
+        : ATMException(message) {}
 };
