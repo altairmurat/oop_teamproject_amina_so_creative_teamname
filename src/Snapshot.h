@@ -1,19 +1,18 @@
 // Owner: Seunggyun (Person A)
 #pragma once
-#include <iostream>
 #include <vector>
 
 class ATM;
 
-// REQ10.1: typing "/" at any prompt prints all ATM cash and all account balances.
-// main() hooks Snapshot::print() into ConsoleUI::setSnapshotCallback, so
-// ConsoleUI (Person B) prints it whenever it sees "/".
-// main() registers the ATMs once; banks are found through Bank::allBanks().
+// REQ10.1: typing "/" at any prompt prints the cash of every ATM and the
+// balance of every account. main() gives the ATM list to setATMs() once and
+// passes &Snapshot::print to ConsoleUI::setSnapshotCallback (function pointer).
+// The banks are found through Bank::getAllBanks().
 class Snapshot {
-public:
-    static void setATMs(std::vector<const ATM*> atmList);
-    static void print(std::ostream& os = std::cout);
-
 private:
-    static std::vector<const ATM*>& atms();
+    static std::vector<ATM*> m_atms;
+
+public:
+    static void setATMs(const std::vector<ATM*>& atms);
+    static void print();
 };
