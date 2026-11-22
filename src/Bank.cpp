@@ -1,119 +1,156 @@
 // Owner: Seunggyun (Person A)
 #include "Bank.h"
-#include <algorithm>
-#include <stdexcept>
-#include <utility>
+#include "Exceptions.h"
 
-// Function-local statics: no static-initialization-order problems.
-std::vector<Bank*>& Bank::registry() {
-    static std::vector<Bank*> banks;
-    return banks;
-}
+using namespace std;
 
-std::set<std::string>& Bank::adminCards() {
-    static std::set<std::string> cards;
-    return cards;
-}
+// Static members are defined once, outside the class.
+vector<Bank*> Bank::m_allBanks;
+vector<string> Bank::m_adminCards;
 
-Bank::Bank(std::string bankName) : name(std::move(bankName)) {
-    if (name.empty()) throw std::invalid_argument("Bank name cannot be empty");
-    if (findBank(name)) throw std::invalid_argument("Duplicate bank name: " + name);
-    registry().push_back(this);
+Bank::Bank(const string& name) : m_name{ name } {
+    if (name.empty()) {
+        throw InvalidInputException("Bank name cannot be empty.");
+    }
+    if (findBank(name) != nullptr) {
+        throw InvalidInputException("Duplicate bank name: " + name);
+    }
+    m_allBanks.push_back(this);
 }
 
 Bank::~Bank() {
-    auto& r = registry();
-    r.erase(std::remove(r.begin(), r.end(), this), r.end());
+    for (size_t i = 0; i < m_accounts.size(); i++) {
+        delete m_accounts[i];
+    }
+    m_accounts.clear();
+
+    // remove this bank from the list of all banks
+    for (size_t i = 0; i < m_allBanks.size(); i++) {
+        if (m_allBanks[i] == this) {
+            m_allBanks.erase(m_allBanks.begin() + i);
+            break;
+        }
+    }
 }
 
-Account& Bank::openAccount(const std::string& owner, const std::string& accountNumber,
-                           long long balance, const std::string& cardNumber,
-                           const std::string& password) {
-    if (findAccount(accountNumber))
-        throw std::invalid_argument("Duplicate account number: " + accountNumber);
-    accounts.push_back(std::make_unique<Account>(name, owner, accountNumber, balance,
-                                                 cardNumber, password));
-    return *accounts.back();
+void Bank::openAccount(const string& ownerName, const string& accountNumber,
+                       long long balance, const string& cardNumber,
+                       const string& password) {
+    if (findAccount(accountNumber) != nullptr) {
+        throw InvalidInputException("Duplicate account number: " + accountNumber);
+    }
+    Account* account = new Account(m_name, ownerName, accountNumber, balance, cardNumber, password);
+    m_accounts.push_back(account);
 }
 
-std::vector<Account*> Bank::getAccounts() const {
-    std::vector<Account*> out;
-    for (const auto& a : accounts) out.push_back(a.get());
-    return out;
-}
-
-bool Bank::owns(const Account& acc) const {
-    for (const auto& a : accounts)
-        if (a.get() == &acc) return true;
+bool Bank::hasAccount(const Account& account) const {
+    for (size_t i = 0; i < m_accounts.size(); i++) {
+        if (m_accounts[i] == &account) {
+            return true;
+        }
+    }
     return false;
 }
 
-Account* Bank::getAccountByCard(const std::string& cardNumber) const {
-    for (const auto& a : accounts)
-        if (a->hasCard(cardNumber)) return a.get();
+Account* Bank::getAccountByCard(const string& cardNumber) const {
+    for (size_t i = 0; i < m_accounts.size(); i++) {
+        if (m_accounts[i]->hasCardNumber(cardNumber)) {
+            return m_accounts[i];
+        }
+    }
     return nullptr;
 }
 
-bool Bank::verifyCard(const std::string& cardNumber) const {
+bool Bank::verifyCard(const string& cardNumber) const {
     return getAccountByCard(cardNumber) != nullptr;
 }
 
-bool Bank::verifyPassword(const std::string& cardNumber, const std::string& pw) const {
-    Account* a = getAccountByCard(cardNumber);
-    return a != nullptr && a->checkPassword(pw);
+bool Bank::verifyPassword(const string& cardNumber, const string& password) const {
+    Account* account = getAccountByCard(cardNumber);
+    if (account == nullptr) {
+        return false;
+    }
+    return account->checkPassword(password);
 }
 
-void Bank::deposit(Account& acc, long long amount) {
-    if (!owns(acc)) throw std::invalid_argument("Account does not belong to " + name);
-    acc.deposit(amount);
+void Bank::deposit(Account& account, long long amount) {
+    if (!hasAccount(account)) {
+        throw InvalidInputException("Account " + account.getAccountNumber() +
+                                    " does not belong to " + m_name + ".");
+    }
+    account.deposit(amount);
 }
 
-void Bank::withdraw(Account& acc, long long amount) {
-    if (!owns(acc)) throw std::invalid_argument("Account does not belong to " + name);
-    acc.withdraw(amount);
+void Bank::withdraw(Account& account, long long amount) {
+    if (!hasAccount(account)) {
+        throw InvalidInputException("Account " + account.getAccountNumber() +
+                                    " does not belong to " + m_name + ".");
+    }
+    account.withdraw(amount);
 }
 
-Account* Bank::findAccount(const std::string& accountNumber) {
-    for (Bank* b : registry())
-        for (const auto& a : b->accounts)
-            if (a->hasNumber(accountNumber)) return a.get();
+Account* Bank::findAccount(const string& accountNumber) {
+    for (size_t b = 0; b < m_allBanks.size(); b++) {
+        vector<Account*>& accounts = m_allBanks[b]->m_accounts;
+        for (size_t a = 0; a < accounts.size(); a++) {
+            if (accounts[a]->hasAccountNumber(accountNumber)) {
+                return accounts[a];
+            }
+        }
+    }
     return nullptr;
 }
 
-Account* Bank::findAccountByCard(const std::string& cardNumber) {
-    for (Bank* b : registry())
-        if (Account* a = b->getAccountByCard(cardNumber)) return a;
+Account* Bank::findAccountByCard(const string& cardNumber) {
+    for (size_t b = 0; b < m_allBanks.size(); b++) {
+        Account* account = m_allBanks[b]->getAccountByCard(cardNumber);
+        if (account != nullptr) {
+            return account;
+        }
+    }
     return nullptr;
 }
 
-Bank* Bank::findBank(const std::string& bankName) {
-    for (Bank* b : registry())
-        if (b->name == bankName) return b;
+Bank* Bank::findBank(const string& name) {
+    for (size_t b = 0; b < m_allBanks.size(); b++) {
+        if (m_allBanks[b]->m_name == name) {
+            return m_allBanks[b];
+        }
+    }
     return nullptr;
 }
 
-const std::vector<Bank*>& Bank::allBanks() { return registry(); }
-
-void Bank::transfer(Account& src, Account& dst, long long amount, long long fee) {
-    if (&src == &dst) throw std::invalid_argument("Source and destination are the same account");
-    if (amount <= 0 || fee < 0) throw std::invalid_argument("Invalid transfer amount or fee");
-    if (src.getBalance() < amount + fee)
-        throw std::runtime_error("Insufficient funds in account " + src.getAccountNumber());
-    src.withdraw(amount + fee);  // cannot fail after the check above
-    dst.deposit(amount);
+vector<Bank*> Bank::getAllBanks() {
+    return m_allBanks;
 }
 
-void Bank::registerAdminCard(const std::string& cardNumber) {
-    adminCards().insert(Account::normalize(cardNumber));
+void Bank::transfer(Account& source, Account& destination, long long amount, long long fee) {
+    if (&source == &destination) {
+        throw InvalidInputException("Source and destination are the same account.");
+    }
+    if (amount <= 0 || fee < 0) {
+        throw InvalidInputException("Invalid transfer amount or fee.");
+    }
+    if (source.getBalance() < amount + fee) {
+        throw InsufficientFundsException("Insufficient funds in account " +
+                                         source.getAccountNumber() + ".");
+    }
+    source.withdraw(amount + fee); // cannot fail after the check above
+    destination.deposit(amount);
 }
 
-bool Bank::isAdminCard(const std::string& cardNumber) {
-    return adminCards().count(Account::normalize(cardNumber)) > 0;
+void Bank::addAdminCard(const string& cardNumber) {
+    if (!isAdminCard(cardNumber)) {
+        m_adminCards.push_back(Account::removeDashes(cardNumber));
+    }
 }
 
-std::unique_ptr<Card> Bank::lookupCard(const std::string& cardNumber) {
-    if (isAdminCard(cardNumber)) return std::make_unique<AdminCard>(cardNumber);
-    if (Account* a = findAccountByCard(cardNumber))
-        return std::make_unique<Card>(cardNumber, a->getBankName());
-    return nullptr;
+bool Bank::isAdminCard(const string& cardNumber) {
+    string number = Account::removeDashes(cardNumber);
+    for (size_t i = 0; i < m_adminCards.size(); i++) {
+        if (m_adminCards[i] == number) {
+            return true;
+        }
+    }
+    return false;
 }

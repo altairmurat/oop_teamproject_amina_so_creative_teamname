@@ -1,7 +1,6 @@
 // Owner: Seunggyun (Person A)
 #include <exception>
 #include <iostream>
-#include <memory>
 #include <string>
 #include <vector>
 
@@ -17,83 +16,122 @@
 #include "Snapshot.h"
 #include "SystemLoader.h"
 
-namespace {
+using namespace std;
 
-// The only place that calls Person B's constructors.
-std::unique_ptr<ATM> makeATM(const ATMConfig& cfg) {
-    LanguageMode mode = cfg.bilingual ? LanguageMode::Bilingual : LanguageMode::Unilingual;
-    CashInventory cash(cfg.bills[0], cfg.bills[1], cfg.bills[2], cfg.bills[3]); // 50k,10k,5k,1k
-    if (cfg.multiBank)
-        return std::make_unique<MultiBankATM>(cfg.serialNumber, cfg.primaryBank, mode, cash);
-    return std::make_unique<SingleBankATM>(cfg.serialNumber, cfg.primaryBank, mode, cash);
+// Creates the right kind of ATM. The result is returned as an ATM* (upcasting),
+// so main() can keep both kinds of ATM in one vector.
+ATM* createATM(const ATMConfig& config) {
+    LanguageMode mode = LanguageMode::Unilingual;
+    if (config.isBilingual) {
+        mode = LanguageMode::Bilingual;
+    }
+    CashInventory cash(config.bills[0], config.bills[1], config.bills[2], config.bills[3]);
+
+    if (config.isMultiBank) {
+        return new MultiBankATM(config.serialNumber, config.primaryBank, mode, cash);
+    }
+    return new SingleBankATM(config.serialNumber, config.primaryBank, mode, cash);
 }
 
-std::string describe(const ATMConfig& cfg) {
-    return cfg.serialNumber + " (" + cfg.primaryBank + ", " +
-           (cfg.multiBank ? "Multi-Bank" : "Single-Bank") + ", " +
-           (cfg.bilingual ? "Bilingual" : "Unilingual") + ")";
+string describeATM(const ATMConfig& config) {
+    string type = config.isMultiBank ? "Multi-Bank" : "Single-Bank";
+    string language = config.isBilingual ? "Bilingual" : "Unilingual";
+    return config.serialNumber + " (" + config.primaryBank + ", " + type + ", " + language + ")";
 }
 
-// Card insertion: the bank side decides what the card is (REQ1.9, REQ3.3).
+// Card insertion. The bank side decides what kind of card it is (REQ1.9, REQ3.3),
+// then the Session (Person B) takes over. Both card types are passed as
+// const Card& (upcasting), and Session calls the virtual isAdmin().
 void runOneSession(ATM& atm) {
-    std::string number = ConsoleUI::readLine("Insert card (enter card number): ");
-    std::unique_ptr<Card> card = Bank::lookupCard(number);
-    if (!card) {
+    string cardNumber = ConsoleUI::readLine("Insert card (enter card number): ");
+
+    if (Bank::isAdminCard(cardNumber)) {
+        // An admin card has no issuing bank, so the ATM's primary bank is used.
+        Bank* primaryBank = Bank::findBank(atm.getPrimaryBankName());
+        if (primaryBank == nullptr) {
+            ConsoleUI::showMessage("Invalid card. The card is returned.");
+            return;
+        }
+        AdminCard adminCard(cardNumber);
+        Session session(atm);
+        session.run(adminCard, *primaryBank);
+        return;
+    }
+
+    Account* account = Bank::findAccountByCard(cardNumber);
+    if (account == nullptr) {
         ConsoleUI::showMessage("Invalid card. The card is returned.");
         return;
     }
-    // An admin card has no issuing bank; the ATM's primary bank stands in.
-    Bank* issuing = Bank::findBank(card->isAdmin() ? atm.getPrimaryBankName()
-                                                   : card->getBankName());
-    if (!issuing) {
-        ConsoleUI::showMessage("Invalid card. The card is returned.");
-        return;
-    }
+    Bank* issuingBank = Bank::findBank(account->getBankName());
+    Card card(cardNumber, account->getBankName());
     Session session(atm);
-    session.run(*card, *issuing);
+    session.run(card, *issuingBank);
 }
 
-} // namespace
+// Frees everything created with new. ATM has a virtual destructor,
+// so deleting through ATM* also runs the derived class destructor.
+void deleteAll(vector<ATM*>& atms, vector<Bank*>& banks) {
+    for (size_t i = 0; i < atms.size(); i++) {
+        delete atms[i];
+    }
+    atms.clear();
+    for (size_t i = 0; i < banks.size(); i++) {
+        delete banks[i]; // also deletes the bank's accounts
+    }
+    banks.clear();
+}
 
 int main(int argc, char* argv[]) {
-    const std::string path = (argc > 1) ? argv[1] : "data/initial_conditions.txt";
+    string path = "data/initial_conditions.txt";
+    if (argc > 1) {
+        path = argv[1];
+    }
 
-    // 1. Load everything from the file (REQ1.11). No hard-coded data.
-    SystemData system;
-    std::vector<std::unique_ptr<ATM>> atms;
+    vector<Bank*> banks;
+    vector<ATMConfig> atmConfigs;
+    vector<ATM*> atms;
+
+    // 1. Load everything from the file (REQ1.11). Nothing is hard-coded.
     try {
-        system = SystemLoader::load(path);
-        for (const ATMConfig& cfg : system.atms) atms.push_back(makeATM(cfg));
-    } catch (const std::exception& e) {
-        std::cerr << "Failed to load initial conditions: " << e.what() << "\n";
+        SystemLoader::load(path, banks, atmConfigs);
+        for (size_t i = 0; i < atmConfigs.size(); i++) {
+            atms.push_back(createATM(atmConfigs[i]));
+        }
+    } catch (exception& e) {
+        cerr << "Failed to load initial conditions: " << e.what() << "\n";
+        deleteAll(atms, banks);
         return 1;
     }
 
     // 2. "/" at any prompt prints the snapshot (REQ10.1).
-    std::vector<const ATM*> view;
-    for (const auto& a : atms) view.push_back(a.get());
-    Snapshot::setATMs(view);
-    ConsoleUI::setSnapshotCallback([] { Snapshot::print(); });
+    Snapshot::setATMs(atms);
+    ConsoleUI::setSnapshotCallback(&Snapshot::print);
 
-    // 3. Main loop: pick an ATM, run one session on it, repeat.
+    // 3. Main loop: choose an ATM, run one session on it, repeat.
     while (true) {
-        std::cout << "\n===== ATM SYSTEM =====\n";
-        for (size_t i = 0; i < system.atms.size(); ++i)
-            std::cout << "  " << (i + 1) << ". ATM " << describe(system.atms[i]) << "\n";
-        std::cout << "  0. Exit   (type / at any prompt for a snapshot)\n";
+        cout << "\n===== ATM SYSTEM =====\n";
+        for (size_t i = 0; i < atmConfigs.size(); i++) {
+            cout << "  " << (i + 1) << ". ATM " << describeATM(atmConfigs[i]) << "\n";
+        }
+        cout << "  0. Exit   (type / at any prompt for a snapshot)\n";
 
         try {
-            int choice = ConsoleUI::readMenuChoice("Select an ATM: ", 0,
-                                                   static_cast<int>(atms.size()));
-            if (choice == 0) break;
+            int choice = ConsoleUI::readMenuChoice("Select an ATM: ", 0, static_cast<int>(atms.size()));
+            if (choice == 0) {
+                break;
+            }
             runOneSession(*atms[choice - 1]);
-        } catch (const std::exception& e) {
-            if (!std::cin) break; // input ended (e.g. piped test file)
-            // Last line of defense so a bug never crashes the demo.
-            std::cout << "Session ended: " << e.what() << "\n";
+        } catch (exception& e) {
+            if (!cin) {
+                break; // input ended, e.g. a piped test file
+            }
+            // Last line of defense: a bug must not crash the demo.
+            cout << "Session ended: " << e.what() << "\n";
         }
     }
 
-    std::cout << "Goodbye.\n";
+    deleteAll(atms, banks);
+    cout << "Goodbye.\n";
     return 0;
 }

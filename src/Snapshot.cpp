@@ -1,35 +1,45 @@
 // Owner: Seunggyun (Person A)
 #include "Snapshot.h"
-#include <utility>
+#include <iostream>
 #include "ATM.h"
 #include "Bank.h"
 #include "CashInventory.h"
 #include "Constants.h"
 
-std::vector<const ATM*>& Snapshot::atms() {
-    static std::vector<const ATM*> list;
-    return list;
+using namespace std;
+
+vector<ATM*> Snapshot::m_atms;
+
+void Snapshot::setATMs(const vector<ATM*>& atms) {
+    m_atms = atms;
 }
 
-void Snapshot::setATMs(std::vector<const ATM*> atmList) { atms() = std::move(atmList); }
+void Snapshot::print() {
+    cout << "\n==================== SNAPSHOT ====================\n";
 
-void Snapshot::print(std::ostream& os) {
-    os << "\n==================== SNAPSHOT ====================\n";
-    for (const ATM* atm : atms()) {
-        const CashInventory& inv = atm->getInventory();
-        os << "ATM [SN: " << atm->getSerialNumber() << "] remaining cash: {";
-        bool first = true;
-        for (int denom : Constants::DENOMINATIONS) {
-            if (!first) os << ", ";
-            first = false;
-            os << "KRW " << denom << " : " << inv.getCount(denom);
+    for (size_t i = 0; i < m_atms.size(); i++) {
+        const CashInventory& inventory = m_atms[i]->getInventory();
+        cout << "ATM [SN: " << m_atms[i]->getSerialNumber() << "] remaining cash: {";
+        for (size_t d = 0; d < Constants::DENOMINATIONS.size(); d++) {
+            int denomination = Constants::DENOMINATIONS[d];
+            if (d > 0) {
+                cout << ", ";
+            }
+            cout << "KRW " << denomination << " : " << inventory.getCount(denomination);
         }
-        os << "}, total: KRW " << inv.getTotalCash() << "\n";
+        cout << "}, total: KRW " << inventory.getTotalCash() << "\n";
     }
-    for (const Bank* bank : Bank::allBanks())
-        for (const Account* acc : bank->getAccounts())
-            os << "Account [Bank: " << acc->getBankName() << ", No: " << acc->getAccountNumber()
-               << "] Owner: " << acc->getOwnerName() << ", balance: KRW " << acc->getBalance()
-               << "\n";
-    os << "==================================================\n\n";
+
+    vector<Bank*> banks = Bank::getAllBanks();
+    for (size_t b = 0; b < banks.size(); b++) {
+        vector<Account*> accounts = banks[b]->getAccounts();
+        for (size_t a = 0; a < accounts.size(); a++) {
+            cout << "Account [Bank: " << accounts[a]->getBankName()
+                 << ", No: " << accounts[a]->getAccountNumber()
+                 << "] Owner: " << accounts[a]->getOwnerName()
+                 << ", balance: KRW " << accounts[a]->getBalance() << "\n";
+        }
+    }
+
+    cout << "==================================================\n\n";
 }

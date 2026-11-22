@@ -1,9 +1,11 @@
 // Owner: Seunggyun (Person A)
 #include "Card.h"
-#include <utility>
 
-Card::Card(std::string cardNumber, std::string bankName)
-    : cardNumber(std::move(cardNumber)), bankName(std::move(bankName)) {}
+Card::Card(const std::string& cardNumber, const std::string& bankName)
+    : m_cardNumber{ cardNumber }, m_bankName{ bankName } {
+}
 
-AdminCard::AdminCard(std::string cardNumber)
-    : Card(std::move(cardNumber), "") {}
+// An admin card is not issued by any bank, so the base part gets an empty bank name.
+AdminCard::AdminCard(const std::string& cardNumber)
+    : Card(cardNumber, "") {
+}
