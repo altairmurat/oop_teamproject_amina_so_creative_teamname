@@ -1,4 +1,4 @@
-// Owner: Seunggyun (Person A)
+// Owner: Rabia (Person A)
 #pragma once
 #include <vector>
 

@@ -1,4 +1,4 @@
-// Owner: Seunggyun (Person A)
+// Owner: Rabia (Person A)
 #include "Snapshot.h"
 #include <iostream>
 #include "ATM.h"

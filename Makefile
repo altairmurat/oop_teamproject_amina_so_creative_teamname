@@ -1,4 +1,4 @@
-# Owner: Seunggyun (Person A)
+# Owner: Rabia (Person A)
 CXX      ?= g++
 CXXFLAGS ?= -std=c++17 -Wall -Wextra -O2
 SRC      := $(wildcard src/*.cpp)

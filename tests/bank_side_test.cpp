@@ -1,4 +1,4 @@
-// Owner: Seunggyun (Person A)
+// Owner: Rabia (Person A)
 // Test driver for the bank side. Needs only Card, Account, Bank and SystemLoader.
 // Run from the project folder:   make test-bank
 #include <cstdio>

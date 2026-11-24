@@ -1,4 +1,4 @@
-// Owner: Seunggyun (Person A)
+// Owner: Rabia (Person A)
 #include "Card.h"
 
 Card::Card(const std::string& cardNumber, const std::string& bankName)

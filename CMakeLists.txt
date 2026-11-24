@@ -1,4 +1,4 @@
-# Owner: Seunggyun (Person A)
+# Owner: Rabia (Person A)
 cmake_minimum_required(VERSION 3.10)
 project(ATMTermProject CXX)
 
