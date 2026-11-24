@@ -10,6 +10,7 @@ Account::Account(const string& bankName, const string& ownerName,
     : m_bankName{ bankName }, m_ownerName{ ownerName },
       m_accountNumber{ accountNumber }, m_balance{ balance },
       m_cardNumber{ cardNumber }, m_password{ password } {
+    // a bank account can't start with negative money
     if (balance < 0) {
         throw InvalidInputException("Account balance cannot be negative: " + accountNumber);
     }
@@ -27,6 +28,7 @@ bool Account::hasCardNumber(const string& cardNumber) const {
     return removeDashes(cardNumber) == removeDashes(m_cardNumber);
 }
 
+// this is to check BEFORE changing anything (transactions use it to validate first)
 bool Account::canWithdraw(long long amount) const {
     return amount > 0 && amount <= m_balance;
 }
@@ -42,6 +44,7 @@ void Account::withdraw(long long amount) {
     if (amount <= 0) {
         throw InvalidInputException("Withdrawal amount must be positive.");
     }
+    // not enough money -> throw and leave the balance as it was
     if (amount > m_balance) {
         throw InsufficientFundsException("Insufficient funds in account " + m_accountNumber + ".");
     }
@@ -55,6 +58,7 @@ void Account::addHistory(const string& line) {
 string Account::removeDashes(const string& number) {
     string result;
     for (size_t i = 0; i < number.length(); i++) {
+        // keep only the real characters, skip '-' and spaces
         if (number[i] != '-' && number[i] != ' ') {
             result += number[i];
         }

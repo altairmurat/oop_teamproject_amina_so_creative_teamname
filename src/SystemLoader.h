@@ -6,33 +6,33 @@
 #include <vector>
 #include "Bank.h"
 
-// What the file says about one ATM. main() turns it into a SingleBankATM or
-// MultiBankATM object, so the loader does not need the ATM classes.
+// this is what the file says about one ATM. main() turns it into a SingleBankATM or
+// MultiBankATM, so the loader itself doesn't need to know the ATM classes
 struct ATMConfig {
     std::string primaryBank;
     std::string serialNumber;
-    bool isMultiBank = false;    // false: Single-Bank, true: Multi-Bank
-    bool isBilingual = false;    // false: Unilingual, true: Bilingual
-    int bills[4] = { 0, 0, 0, 0 }; // counts of 50000, 10000, 5000, 1000 KRW bills
+    bool isMultiBank = false;      // false: Single-Bank, true: Multi-Bank
+    bool isBilingual = false;      // false: Unilingual, true: Bilingual
+    int bills[4] = { 0, 0, 0, 0 }; // how many 50000, 10000, 5000, 1000 KRW bills
 };
 
-// Reads the initial condition file (REQ1.11). File format:
+// this is to read the initial condition file (REQ1.11), nothing is hard-coded. format:
 //   line 1      : B A N            (number of banks, accounts, ATMs)
 //   B lines     : bank name
 //   6 x A lines : bank, user name, account number, funds, card number, password
 //   5 x N lines : primary bank, serial number, Single|Multi, Unilingual|Bilingual,
 //                 "count50000 count10000 count5000 count1000"
 //   optional    : "Admin <card number>" lines
-// Blank lines and lines starting with '#' are skipped.
+// blank lines and lines that start with '#' are skipped
 class SystemLoader {
 public:
-    // Fills banks (created with new; the caller must delete them, also after an
-    // exception) and atmConfigs. Throws std::runtime_error with the line number
-    // if the file is missing or not in the format above.
+    // fills banks (made with new - the caller has to delete them, even after an exception)
+    // and atmConfigs. throws std::runtime_error with the line number if the file
+    // is missing or broken
     static void load(const std::string& path, std::vector<Bank*>& banks,
                      std::vector<ATMConfig>& atmConfigs);
 
-    // Admin card used when the file has no "Admin" line.
+    // admin card that is used when the file has no "Admin" line
     static const std::string DEFAULT_ADMIN_CARD;
 
 private:

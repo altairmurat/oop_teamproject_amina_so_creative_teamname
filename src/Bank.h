@@ -4,48 +4,48 @@
 #include <vector>
 #include "Account.h"
 
-// A bank owns its accounts (REQ1.5, REQ1.6). The accounts are created with new
-// and deleted in the destructor.
+// this is a bank: it owns its accounts (REQ1.5, REQ1.6).
+// accounts are made with new in openAccount() and deleted in the destructor.
 //
-// Every Bank also adds itself to the static list m_allBanks, so that static
-// functions such as findAccount() can search all banks without anyone passing
-// a list of banks around (one copy shared by all objects, Lecture 9).
+// every Bank also puts itself into the static list m_allBanks, so static functions
+// like findAccount() can search ALL banks without anyone passing a list around
+// (static = one copy shared by every Bank object).
 //
-// Banks must be created with new (SystemLoader does this) and deleted by main().
+// banks are created with new by SystemLoader and deleted by main()
 class Bank {
 private:
     std::string m_name;
     std::vector<Account*> m_accounts;
 
     static std::vector<Bank*> m_allBanks;
-    static std::vector<std::string> m_adminCards; // stored without dashes
+    static std::vector<std::string> m_adminCards; // saved without dashes
 
 public:
     Bank(const std::string& name);
     ~Bank();
 
-    // A copy would share the same Account pointers and both copies would
-    // delete them (the shallow copy problem from Lecture 9), so copying is forbidden.
+    // copying is forbidden: a copy would hold the same Account pointers and
+    // both copies would delete them (shallow copy problem)
     Bank(const Bank&) = delete;
     Bank& operator=(const Bank&) = delete;
 
     std::string getName() const { return m_name; }
     std::vector<Account*> getAccounts() const { return m_accounts; }
 
-    // Creates a new account in this bank. Throws InvalidInputException
-    // if the account number already exists in any bank.
+    // this is to make a new account inside this bank. one user can have many accounts.
+    // throws InvalidInputException if the account number or card number is already used
     void openAccount(const std::string& ownerName, const std::string& accountNumber,
                      long long balance, const std::string& cardNumber,
                      const std::string& password);
 
     bool hasAccount(const Account& account) const;
 
-    // REQ3.3 (bank side): the ATM asks the bank, the bank answers.
+    // REQ3.3 (bank side): the ATM doesn't know passwords, it asks the bank and the bank answers
     bool verifyCard(const std::string& cardNumber) const;
     bool verifyPassword(const std::string& cardNumber, const std::string& password) const;
     Account* getAccountByCard(const std::string& cardNumber) const; // nullptr if not found
 
-    // Balance changes for an account of this bank.
+    // balance changes for an account that belongs to this bank
     void deposit(Account& account, long long amount);
     void withdraw(Account& account, long long amount);
 
@@ -55,11 +55,12 @@ public:
     static Bank* findBank(const std::string& name);                   // nullptr if not found
     static std::vector<Bank*> getAllBanks();
 
-    // Moves amount from source to destination and charges fee to source (REQ6.x).
-    // Checks everything first, so on an exception no balance has changed.
+    // this is to move money between two accounts (can be different banks) and charge the fee
+    // to the source (REQ6.x). everything is checked first, so if it throws nothing has changed
     static void transfer(Account& source, Account& destination, long long amount, long long fee);
 
     // ---- admin cards (REQ1.9) ----
     static void addAdminCard(const std::string& cardNumber);
     static bool isAdminCard(const std::string& cardNumber);
+    static void clearAdminCards(); // this is to start fresh every time the file is loaded
 };

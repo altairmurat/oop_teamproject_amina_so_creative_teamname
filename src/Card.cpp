@@ -5,7 +5,7 @@ Card::Card(const std::string& cardNumber, const std::string& bankName)
     : m_cardNumber{ cardNumber }, m_bankName{ bankName } {
 }
 
-// An admin card is not issued by any bank, so the base part gets an empty bank name.
+// admin card is not issued by any bank, so we pass an empty bank name to the base part
 AdminCard::AdminCard(const std::string& cardNumber)
     : Card(cardNumber, "") {
 }

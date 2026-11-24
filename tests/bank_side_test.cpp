@@ -98,7 +98,7 @@ int main() {
     bool thrown = false;
     try {
         Bank::transfer(*andor, *chris, 1000, 2000); // needs 3000, Andor has 2000
-    } catch (InsufficientFundsException& e) {
+    } catch (InsufficientFundsException&) {
         thrown = true;
     }
     check(thrown && andor->getBalance() == 2000 && chris->getBalance() == 9000,
@@ -107,7 +107,7 @@ int main() {
     thrown = false;
     try {
         chris->withdraw(9001);
-    } catch (InsufficientFundsException& e) {
+    } catch (InsufficientFundsException&) {
         thrown = true;
     }
     check(thrown && chris->getBalance() == 9000, "withdraw 9001 from 9000 throws");
@@ -118,7 +118,7 @@ int main() {
     thrown = false;
     try {
         chris->deposit(0);
-    } catch (InvalidInputException& e) {
+    } catch (InvalidInputException&) {
         thrown = true;
     }
     check(thrown, "deposit 0 throws InvalidInputException");
@@ -126,7 +126,7 @@ int main() {
     thrown = false;
     try {
         kakao->deposit(*andor, 1000); // Andor's account is in IM, not Kakao
-    } catch (InvalidInputException& e) {
+    } catch (InvalidInputException&) {
         thrown = true;
     }
     check(thrown && andor->getBalance() == 2000, "Kakao cannot deposit into an IM account");
@@ -145,6 +145,38 @@ int main() {
     check(loaderRejects("2 0 1\nKakao\nKakao\nKakao\n000111\nSingle\nUni\n1 1 1 1\n"), "duplicate bank");
     check(loaderRejects("1 0 1\nKakao\nKakao\n000111\nSingle\n"), "file ends too early");
     check(Bank::getAllBanks().empty(), "no banks left over after the failed loads");
+    // this is to make sure one card can't open two different accounts
+    check(loaderRejects("1 2 1\nKakao\n"
+                        "Kakao\nChris\n100-100-111111\n4000\n1111\n1\n"
+                        "Kakao\nAmy\n100-100-222222\n5000\n1111\n2\n"
+                        "Kakao\n000111\nSingle\nUni\n1 1 1 1\n"), "duplicate card number");
+    check(loaderRejects("1 1 1\nKakao\nKakao\nChris\n100-100-111111\n4000\n1111\n1\n"
+                        "Kakao\n000111\nSingle\nUni\n1 1 1 1\nAdmin 1111\n"), "admin card = user card");
+
+    cout << "7. One user with many accounts in many banks\n";
+    {
+        const string path = "tests/_tmp_multi.txt";
+        ofstream out(path);
+        out << "2 3 1\nKakao\nIM\n"
+            << "Kakao\nChris\n100-100-111111\n4,000\n1111\n1\n"   // "4,000" with a comma
+            << "Kakao\nChris\n100-100-333333\n1000\n3333\n3\n"    // same user, same bank
+            << "IM\nChris\n200-200-444444\n0\n4444\n4\n"          // same user, other bank
+            << "Kakao\n123456\nSingle-Bank\nBilingual\n2, 3, 1, 3\n"
+            << "Admin 9999\n";
+        out.close();
+
+        vector<Bank*> multiBanks;
+        vector<ATMConfig> multiAtms;
+        SystemLoader::load(path, multiBanks, multiAtms);
+        check(Bank::findBank("Kakao")->getAccounts().size() == 2, "Kakao has 2 accounts of Chris");
+        check(Bank::findAccount("100100111111")->getBalance() == 4000, "\"4,000\" read as 4000");
+        check(Bank::findAccountByCard("4444")->getBankName() == "IM", "card 4444 belongs to IM");
+        check(multiAtms[0].bills[0] == 2 && multiAtms[0].bills[3] == 3, "cash \"2, 3, 1, 3\" read");
+        check(Bank::isAdminCard("9999") && !Bank::isAdminCard("0000"),
+              "admin card from file replaces the old default 0000");
+        deleteBanks(multiBanks);
+        remove(path.c_str());
+    }
 
     if (failures == 0) {
         cout << "All bank-side tests passed.\n";

@@ -17,6 +17,7 @@ void Snapshot::setATMs(const vector<ATM*>& atms) {
 void Snapshot::print() {
     cout << "\n==================== SNAPSHOT ====================\n";
 
+    // 1) every ATM: bills per denomination (50k -> 1k) and the total cash
     for (size_t i = 0; i < m_atms.size(); i++) {
         const CashInventory& inventory = m_atms[i]->getInventory();
         cout << "ATM [SN: " << m_atms[i]->getSerialNumber() << "] remaining cash: {";
@@ -30,6 +31,7 @@ void Snapshot::print() {
         cout << "}, total: KRW " << inventory.getTotalCash() << "\n";
     }
 
+    // 2) every account of every bank, in the same order as the input file
     vector<Bank*> banks = Bank::getAllBanks();
     for (size_t b = 0; b < banks.size(); b++) {
         vector<Account*> accounts = banks[b]->getAccounts();
