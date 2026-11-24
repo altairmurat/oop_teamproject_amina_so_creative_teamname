@@ -106,7 +106,7 @@ string Messages::get(const string& key, Language lang) {
         kr["history_saved"] = "거래 내역이 파일로 저장되었습니다: ";
 
         // korean translations for Amina's keys (deposit and withdraw)
-        kr["prompt.bills_of"] = "지폐 매수 입력 (KRW) ";
+        kr["prompt.bills_of"] = "지폐 매수 입력 (원) ";
         kr["err.too_many_bills"] = "오류: 지폐 매수가 너무 많습니다 (최대 50장).";
         kr["deposit.choose_type"] = "입금 유형 - 1) 현금  2) 수표: ";
         kr["deposit.enter_check"] = "수표 금액을 입력하세요 (100,000원 이상): ";
