@@ -2,121 +2,19 @@
 #include "Session.h"
 #include "ATM.h"
 #include "Account.h"
+#include "AccountTransferTransaction.h"
+#include "AdminMenu.h"
 #include "Bank.h"
 #include "Card.h"
+#include "CashTransferTransaction.h"
 #include "ConsoleUI.h"
 #include "DepositTransaction.h"
 #include "Exceptions.h"
-#include "FeePolicy.h"
 #include "Messages.h"
 #include "Transaction.h"
+#include "TransactionHistory.h"
 #include "WithdrawalTransaction.h"
-#include <fstream>
 #include <iostream>
-
-namespace {
-
-// this is to keep a global log of all successful transactions across sessions
-// until Alan's TransactionHistory and AdminMenu are merged into main
-std::vector<std::string>& globalHistoryLog() {
-    static std::vector<std::string> log;
-    return log;
-}
-
-// local cash transfer transaction until Alan merges CashTransferTransaction into main
-class LocalCashTransfer : public Transaction {
-public:
-    using Transaction::Transaction;
-
-    void execute() override {
-        std::string destNum = ConsoleUI::readLine("Enter destination account number: ");
-        Account* dest = Bank::findAccount(destNum);
-        if (!dest) {
-            throw InvalidInputException("Error: destination account not found.");
-        }
-
-        ConsoleUI::showMessage("Insert cash bills (includes KRW 1,000 fee):");
-        BillCount inserted = ConsoleUI::readBills(Constants::MAX_BILLS_PER_DEPOSIT);
-        long long totalInserted = inserted.total();
-        long long transferFee = FeePolicy::cashTransferFee();
-
-        if (totalInserted <= transferFee) {
-            throw InvalidInputException("Error: inserted cash must be greater than the KRW 1,000 fee.");
-        }
-
-        amount = totalInserted - transferFee;
-        fee = transferFee;
-        destAccount = dest->getAccountNumber();
-
-        Bank* destBank = Bank::findBank(dest->getBankName());
-        if (!destBank) {
-            throw ATMException("Error: destination bank not found.");
-        }
-        destBank->deposit(*dest, amount);
-        transactionATM.addCash(inserted);
-
-        ConsoleUI::showMessage("Fee (KRW): " + std::to_string(fee));
-        ConsoleUI::showMessage("Cash transfer completed.");
-        commit();
-    }
-
-    std::string type() const override { return "Cash Transfer"; }
-
-    std::string describe() const override {
-        return "Cash Transfer -> " + destAccount + " (" + std::to_string(amount) + " Won)";
-    }
-
-private:
-    std::string destAccount;
-};
-
-// local account transfer transaction until Alan merges AccountTransferTransaction into main
-class LocalAccountTransfer : public Transaction {
-public:
-    using Transaction::Transaction;
-
-    void execute() override {
-        std::string destNum = ConsoleUI::readLine("Enter destination account number: ");
-        Account* dest = Bank::findAccount(destNum);
-        if (!dest) {
-            throw InvalidInputException("Error: destination account not found.");
-        }
-        if (dest == &transactionAccount) {
-            throw InvalidInputException("Error: cannot transfer to the same account.");
-        }
-
-        long long transferAmount = ConsoleUI::readPositiveAmount("Enter transfer amount (KRW): ");
-        bool srcPrimary = transactionATM.isPrimaryBank(transactionAccount.getBankName());
-        bool dstPrimary = transactionATM.isPrimaryBank(dest->getBankName());
-        long long transferFee = FeePolicy::accountTransferFee(srcPrimary, dstPrimary);
-
-        if (!transactionAccount.canWithdraw(transferAmount + transferFee)) {
-            throw InsufficientFundsException("Error: insufficient funds in the account (amount + fee).");
-        }
-
-        amount = transferAmount;
-        fee = transferFee;
-        destAccount = dest->getAccountNumber();
-
-        Bank::transfer(transactionAccount, *dest, amount, fee);
-
-        ConsoleUI::showMessage("Fee (KRW): " + std::to_string(fee));
-        ConsoleUI::showMessage("Account transfer completed.");
-        commit();
-    }
-
-    std::string type() const override { return "Account Transfer"; }
-
-    std::string describe() const override {
-        return "Account Transfer " + transactionAccount.getAccountNumber() +
-               " -> " + destAccount + " (" + std::to_string(amount) + " Won)";
-    }
-
-private:
-    std::string destAccount;
-};
-
-} // namespace
 
 Session::Session(ATM& atm)
     : atm(atm) {}
@@ -132,50 +30,59 @@ void Session::run(const Card& card, Bank& issuingBank) {
         // 1. select language if this ATM is bilingual (REQ1.3, REQ8.1)
         Language chosen = ConsoleUI::promptLanguage(atm);
         atm.setLanguage(chosen);
+        ConsoleUI::setLanguage(chosen);
+        Language lang = atm.getLanguage();
 
         // 2. check if this ATM accepts the inserted card (REQ3.1, REQ3.2)
         if (!verifyCard(card)) {
-            ConsoleUI::showMessage("Invalid card for this ATM. The card is returned.");
+            ConsoleUI::showMessage(Messages::get("invalid_card", lang));
+            ConsoleUI::showMessage(Messages::get("session_end", lang));
             endSession();
             return;
         }
 
-        // 3. route admin card directly to the admin menu (REQ1.9, REQ7.1)
+        // 3. route admin card directly to Alan's AdminMenu (REQ1.9, REQ7.1)
         if (card.isAdmin()) {
-            runAdminMenu();
+            AdminMenu::run(atm, TransactionHistory::global());
+            ConsoleUI::showMessage(Messages::get("session_end", lang));
             endSession();
             return;
         }
 
         // 4. verify password with the issuing bank, max 3 wrong tries (REQ3.3, REQ3.4, REQ3.5)
         if (!authorizeUser(card, issuingBank)) {
-            ConsoleUI::showMessage("Too many wrong password attempts. Session ended and card returned.");
+            ConsoleUI::showMessage(Messages::get("auth_failed", lang));
             endSession();
             return;
         }
 
         Account* account = issuingBank.getAccountByCard(card.getCardNumber());
         if (!account) {
-            ConsoleUI::showMessage("Account not found for this card. Session ended.");
+            ConsoleUI::showMessage(Messages::get("account_not_found", lang));
+            ConsoleUI::showMessage(Messages::get("session_end", lang));
             endSession();
             return;
         }
+
+        // start a new session entry in the global transaction history
+        TransactionHistory::global().startSession(card.getCardNumber());
 
         // 5. run the transaction loop until user cancels or an exception occurs
         runMenuLoop(*account, card);
     } catch (const std::exception&) {
         if (!std::cin) {
-            // input stream ended (e.g. test script EOF), still print summary before exiting
+            // input stream ended (e.g. piped test script), still print summary before exiting
             printSummary();
             endSession();
             throw;
         }
+        endSession();
         throw;
     }
 
     // 6. print session summary at the end if at least one transaction succeeded (REQ2.3)
     printSummary();
-    ConsoleUI::showMessage("Session ended. Please take your card.");
+    ConsoleUI::showMessage(Messages::get("session_end", atm.getLanguage()));
     endSession();
 }
 
@@ -184,24 +91,24 @@ bool Session::verifyCard(const Card& card) {
 }
 
 bool Session::authorizeUser(const Card& card, Bank& issuingBank) {
+    Language lang = atm.getLanguage();
     while (wrongPasswordAttempts < Constants::MAX_PASSWORD_ATTEMPTS) {
-        std::string pin = ConsoleUI::readLine("Enter password: ");
+        std::string pin = ConsoleUI::readLine(Messages::get("enter_password", lang));
         if (issuingBank.verifyPassword(card.getCardNumber(), pin)) {
             authorized = true;
             return true;
         }
         ++wrongPasswordAttempts;
-        ConsoleUI::showMessage("Wrong password. Please try again.");
+        ConsoleUI::showMessage(Messages::get("wrong_password", lang));
     }
     return false;
 }
 
 void Session::runMenuLoop(Account& account, const Card& card) {
+    Language lang = atm.getLanguage();
+
     while (active) {
-        int choice = ConsoleUI::readMenuChoice(
-            "\n1. Deposit\n2. Withdrawal\n3. Transfer\n4. Cancel\nSelect: ",
-            1, 4
-        );
+        int choice = ConsoleUI::readMenuChoice(Messages::get("main_menu", lang), 1, 4);
         if (choice == 4) {
             break;
         }
@@ -215,13 +122,12 @@ void Session::runMenuLoop(Account& account, const Card& card) {
                 tx = std::make_shared<WithdrawalTransaction>(atm, account, getWithdrawalCount());
             } else if (choice == 3) {
                 int transferType = ConsoleUI::readMenuChoice(
-                    "\n1. Cash Transfer\n2. Account Transfer\nSelect: ",
-                    1, 2
+                    Messages::get("choose_transfer_type", lang), 1, 2
                 );
                 if (transferType == 1) {
-                    tx = std::make_shared<LocalCashTransfer>(atm, account);
+                    tx = std::make_shared<CashTransferTransaction>(atm, account);
                 } else {
-                    tx = std::make_shared<LocalAccountTransfer>(atm, account);
+                    tx = std::make_shared<AccountTransferTransaction>(atm, account);
                 }
             }
 
@@ -232,11 +138,12 @@ void Session::runMenuLoop(Account& account, const Card& card) {
                 }
                 addCompletedTransaction(tx);
                 account.addHistory(tx->describe());
-                globalHistoryLog().push_back(
-                    "[ID " + std::to_string(tx->transactionID()) + "] " +
-                    "Card: " + card.getCardNumber() + " | " +
-                    tx->type() + " | " + tx->describe() +
-                    " | Fee: " + std::to_string(tx->transactionFee()) + " Won"
+                TransactionHistory::global().addTransaction(
+                    tx->transactionID(),
+                    card.getCardNumber(),
+                    tx->type(),
+                    tx->transactionAmount(),
+                    tx->describe()
                 );
             }
         } catch (const ATMException& e) {
@@ -248,45 +155,13 @@ void Session::runMenuLoop(Account& account, const Card& card) {
     }
 }
 
-void Session::runAdminMenu() {
-    while (true) {
-        int choice = ConsoleUI::readMenuChoice(
-            "\n[Admin Menu]\n1. Transaction History\n2. Exit\nSelect: ",
-            1, 2
-        );
-        if (choice == 2) {
-            break;
-        }
-
-        if (globalHistoryLog().empty()) {
-            ConsoleUI::showMessage("No transactions recorded yet.");
-            continue;
-        }
-
-        ConsoleUI::showMessage("\n=== Transaction History ===");
-        for (const std::string& entry : globalHistoryLog()) {
-            ConsoleUI::showMessage(entry);
-        }
-
-        std::string filename = atm.getPrimaryBankName() + " ATM " +
-                               atm.getSerialNumber() + " transac_history.txt";
-        std::ofstream out(filename);
-        if (out) {
-            for (const std::string& entry : globalHistoryLog()) {
-                out << entry << "\n";
-            }
-            ConsoleUI::showMessage("Transaction history saved to file: " + filename);
-        }
-    }
-}
-
 bool Session::canWithdraw() const {
     return withdrawalCount < Constants::MAX_WITHDRAWALS_PER_SESSION;
 }
 
 void Session::recordWithdrawal() {
     if (!canWithdraw()) {
-        throw LimitExceededException("Error: maximum number of withdrawals per session (3) reached.");
+        throw LimitExceededException(Messages::get("err.withdraw_count", atm.getLanguage()));
     }
     ++withdrawalCount;
 }
@@ -302,18 +177,20 @@ void Session::printSummary() const {
     if (completedTransactions.empty()) {
         return;
     }
-    ConsoleUI::showMessage("\n=== Session Summary ===");
+    Language lang = atm.getLanguage();
+    ConsoleUI::showMessage("\n" + Messages::get("session_summary", lang));
     for (const auto& tx : completedTransactions) {
         ConsoleUI::showMessage(
             "[ID " + std::to_string(tx->transactionID()) + "] " +
-            tx->type() + " - " + tx->describe() +
-            " (Fee: " + std::to_string(tx->transactionFee()) + " Won)"
+            tx->type() + " - " + tx->describe() + " | " +
+            Messages::get("fee_notice", lang) + std::to_string(tx->transactionFee())
         );
     }
-    ConsoleUI::showMessage("=======================");
 }
 
 void Session::endSession() {
     active = false;
     authorized = false;
+    // reset ConsoleUI language to English for the outer ATM selection screen
+    ConsoleUI::setLanguage(Language::English);
 }

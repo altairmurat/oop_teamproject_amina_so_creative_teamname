@@ -44,5 +44,4 @@ private:
     bool verifyCard(const Card& card);
     bool authorizeUser(const Card& card, Bank& issuingBank);
     void runMenuLoop(Account& account, const Card& card);
-    void runAdminMenu();
 };

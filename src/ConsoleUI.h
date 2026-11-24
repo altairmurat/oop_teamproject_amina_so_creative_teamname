@@ -13,6 +13,10 @@ public:
     static void setSnapshotCallback(std::function<void()> callback);
     static void triggerSnapshot();
 
+    // this is to keep ConsoleUI in sync with the current ATM session language
+    static void setLanguage(Language lang);
+    static Language getLanguage();
+
     // reads a line and intercepts '/' anywhere to print the snapshot
     static std::string readLine(const std::string& prompt = "");
 
@@ -27,5 +31,6 @@ public:
 
 private:
     static std::function<void()> snapshotCallback;
+    static Language currentLanguage;
     static std::string trim(const std::string& s);
 };
