@@ -8,7 +8,7 @@ public:
     // (Session::getWithdrawalCount()). Session calls recordWithdrawal() after execute() succeeds
     WithdrawalTransaction(ATM& atm, Account& account, int withdrawalsSoFar);
     void execute() override;
-    std::string type() const override { return "Cash Withdrawal"; }
+    std::string type() const override { return tr("tx.withdrawal"); }
     std::string describe() const override;
 
 private:

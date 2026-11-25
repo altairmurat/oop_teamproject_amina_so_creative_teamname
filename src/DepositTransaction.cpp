@@ -47,5 +47,5 @@ void DepositTransaction::execute() {
 }
 
 std::string DepositTransaction::describe() const {
-    return std::to_string(amount) + "Won added to " + transactionAccount.getAccountNumber();
+    return money(amount) + tr("tx.added_to") + transactionAccount.getAccountNumber();
 }
