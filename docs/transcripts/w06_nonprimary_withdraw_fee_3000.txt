@@ -1,0 +1,68 @@
+# w06_nonprimary_withdraw_fee_3000  [REQ5.4]
+# typed (one per Enter): 2 | 1111-1111-1111 | 1 | 1234 | 1 | 1 | 0 | 0 | 0 | 10 | 0 | 0 | 0 | 2 | 2 | 5000 | 4 | / | 0
+------------------------------------------------------------
+
+===== ATM SYSTEM =====
+  1. ATM 000111 (Kakao, Single-Bank, Unilingual)
+  2. ATM 000222 (IM, Multi-Bank, Bilingual)
+  0. Exit   (type / at any prompt for a snapshot)
+Select an ATM: 2
+Insert card (enter card number): 1111-1111-1111
+Select language (1. English, 2. Korean): 
+언어를 선택하세요 (1. 영어, 2. 한국어): 1
+Enter password: 1234
+
+1. Deposit
+2. Withdrawal
+3. Transfer
+4. Cancel
+Select: 1
+Deposit type - 1) Cash  2) Check: 1
+Number of bills for KRW 50000: 0
+Number of bills for KRW 10000: 0
+Number of bills for KRW 5000: 0
+Number of bills for KRW 1000: 10
+Deposit fee required - insert it in cash (KRW): 2000
+Number of bills for KRW 50000: 0
+Number of bills for KRW 10000: 0
+Number of bills for KRW 5000: 0
+Number of bills for KRW 1000: 2
+Deposit completed.
+
+1. Deposit
+2. Withdrawal
+3. Transfer
+4. Cancel
+Select: 2
+Enter the withdrawal amount (KRW): 5000
+Dispensing:
+ KRW 1000 x 5
+Fee charged to the account (KRW): 3000
+Withdrawal completed.
+
+1. Deposit
+2. Withdrawal
+3. Transfer
+4. Cancel
+Select: 4
+
+=== Session Summary ===
+[ID 1] Cash Deposit - 10000Won added to 100-100-111111 | Fee (KRW): 2000
+[ID 2] Cash Withdrawal - 5000Won withdrawn from 100-100-111111 | Fee (KRW): 3000
+Session ended. Please take your card.
+
+===== ATM SYSTEM =====
+  1. ATM 000111 (Kakao, Single-Bank, Unilingual)
+  2. ATM 000222 (IM, Multi-Bank, Bilingual)
+  0. Exit   (type / at any prompt for a snapshot)
+Select an ATM: /
+
+==================== SNAPSHOT ====================
+ATM [SN: 000111] remaining cash: {KRW 50000 : 2, KRW 10000 : 3, KRW 5000 : 1, KRW 1000 : 3}, total: KRW 138000
+ATM [SN: 000222] remaining cash: {KRW 50000 : 0, KRW 10000 : 0, KRW 5000 : 0, KRW 1000 : 67}, total: KRW 67000
+Account [Bank: Kakao, No: 100-100-111111] Owner: Chris, balance: KRW 6000
+Account [Bank: IM, No: 200-200-222222] Owner: Andor, balance: KRW 6000
+==================================================
+
+Select an ATM: 0
+Goodbye.

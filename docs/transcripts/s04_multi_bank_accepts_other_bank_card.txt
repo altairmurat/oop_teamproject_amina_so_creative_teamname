@@ -1,0 +1,27 @@
+# s04_multi_bank_accepts_other_bank_card  [REQ3.1]
+# typed (one per Enter): 2 | 1111-1111-1111 | 1 | 1234 | 4 | 0
+------------------------------------------------------------
+
+===== ATM SYSTEM =====
+  1. ATM 000111 (Kakao, Single-Bank, Unilingual)
+  2. ATM 000222 (IM, Multi-Bank, Bilingual)
+  0. Exit   (type / at any prompt for a snapshot)
+Select an ATM: 2
+Insert card (enter card number): 1111-1111-1111
+Select language (1. English, 2. Korean): 
+언어를 선택하세요 (1. 영어, 2. 한국어): 1
+Enter password: 1234
+
+1. Deposit
+2. Withdrawal
+3. Transfer
+4. Cancel
+Select: 4
+Session ended. Please take your card.
+
+===== ATM SYSTEM =====
+  1. ATM 000111 (Kakao, Single-Bank, Unilingual)
+  2. ATM 000222 (IM, Multi-Bank, Bilingual)
+  0. Exit   (type / at any prompt for a snapshot)
+Select an ATM: 0
+Goodbye.

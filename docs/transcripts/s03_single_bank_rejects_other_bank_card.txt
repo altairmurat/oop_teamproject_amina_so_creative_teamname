@@ -1,0 +1,19 @@
+# s03_single_bank_rejects_other_bank_card  [REQ3.1, 3.2]
+# typed (one per Enter): 1 | 2222-2222-2222 | 0
+------------------------------------------------------------
+
+===== ATM SYSTEM =====
+  1. ATM 000111 (Kakao, Single-Bank, Unilingual)
+  2. ATM 000222 (IM, Multi-Bank, Bilingual)
+  0. Exit   (type / at any prompt for a snapshot)
+Select an ATM: 1
+Insert card (enter card number): 2222-2222-2222
+This card cannot be used on this ATM.
+Session ended. Please take your card.
+
+===== ATM SYSTEM =====
+  1. ATM 000111 (Kakao, Single-Bank, Unilingual)
+  2. ATM 000222 (IM, Multi-Bank, Bilingual)
+  0. Exit   (type / at any prompt for a snapshot)
+Select an ATM: 0
+Goodbye.
