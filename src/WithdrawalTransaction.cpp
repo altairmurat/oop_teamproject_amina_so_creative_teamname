@@ -50,5 +50,5 @@ void WithdrawalTransaction::execute() {
 }
 
 std::string WithdrawalTransaction::describe() const {
-    return std::to_string(amount) + "Won withdrawn from " + transactionAccount.getAccountNumber();
+    return money(amount) + tr("tx.withdrawn_from") + transactionAccount.getAccountNumber();
 }

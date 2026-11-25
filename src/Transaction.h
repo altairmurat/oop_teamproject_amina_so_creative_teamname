@@ -17,7 +17,7 @@ class Bank;
 class Transaction {
 public:
     Transaction(ATM& atm, Account& account);
-    virtual ~Transaction() {};
+    virtual ~Transaction() {}
 
     virtual void execute() = 0; // throws ATMException on failure
     virtual std::string type() const = 0; // e.g. "Cash Deposit"
@@ -32,7 +32,8 @@ public:
 protected:
     void commit(); // assigns a unique ID
     std::string tr(const std::string& key) const; // messages in the ATM'S current language
-    Bank& issuingBank() const; // asks for a count per denomination, max 50 bills
+    Bank& issuingBank() const; // the bank that owns transactionAccount
+    std::string money(long long krw) const; // "KRW 4,000" (EN) or "4,000원" (KR)
 
     ATM& transactionATM;
     Account& transactionAccount;

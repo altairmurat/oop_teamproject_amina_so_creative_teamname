@@ -1,4 +1,5 @@
 // Owner: Amina
+#pragma once
 // every fee rule from REQ1.8 lives here
 
 class FeePolicy {

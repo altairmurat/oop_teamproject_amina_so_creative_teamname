@@ -67,6 +67,13 @@ string Messages::get(const string& key, Language lang) {
         en["withdraw.dispensing"] = "Dispensing:";
         en["withdraw.fee_label"] = "Fee charged to the account (KRW): ";
         en["withdraw.success"] = "Withdrawal completed.";
+        en["tx.cash_deposit"] = "Cash Deposit";
+        en["tx.check_deposit"] = "Check Deposit";
+        en["tx.withdrawal"] = "Cash Withdrawal";
+        en["tx.added_to"] = " added to ";
+        en["tx.withdrawn_from"] = " withdrawn from ";
+        en["tx.krw_prefix"] = "KRW ";
+        en["tx.won_suffix"] = " KRW";
 
 
         // korean
@@ -125,6 +132,13 @@ string Messages::get(const string& key, Language lang) {
         kr["withdraw.dispensing"] = "출금 지폐:";
         kr["withdraw.fee_label"] = "계좌에서 차감된 수수료 (원): ";
         kr["withdraw.success"] = "출금이 완료되었습니다.";
+        kr["tx.cash_deposit"] = "현금 입금";
+        kr["tx.check_deposit"] = "수표 입금";
+        kr["tx.withdrawal"] = "현금 출금";
+        kr["tx.added_to"] = " 입금 → 계좌 ";
+        kr["tx.withdrawn_from"] = " 출금 ← 계좌 ";
+        kr["tx.krw_prefix"] = "";
+        kr["tx.won_suffix"] = "원";
 
         loaded = true;
     }

@@ -58,9 +58,12 @@ int main(int argc, char** argv) {
 
         if (korean) atms[atmIdx]->setLanguage(Language::Korean);   // only works on a bilingual ATM
 
-        const char* accNums[] = {"100-100-111111", "200-200-222222"};
-        Account* acc = Bank::findAccount(accNums[accIdx]);
-        if (!acc) throw std::runtime_error("no such account");
+        // account N = the N-th account, banks in file order (no hard-coded account numbers)
+        std::vector<Account*> all;
+        for (Bank* b : Bank::getAllBanks())
+            for (Account* a : b->getAccounts()) all.push_back(a);
+        if (accIdx < 0 || accIdx >= static_cast<int>(all.size())) throw std::runtime_error("no such account");
+        Account* acc = all[accIdx];
         if (topup > 0) Bank::findBank(acc->getBankName())->deposit(*acc, topup);   // test-only top-up
 
         std::cout << "--- before ---";
