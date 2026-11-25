@@ -1,12 +1,12 @@
 #!/bin/bash
-# run from the repo root:  bash tests/person_c/run_person_c_tests.sh
+# run from the repo root:  bash tests/amina_tests/run_amina_test.sh
 set -e
 SRCS=$(ls src/*.cpp | grep -v '/main.cpp')
-g++ -std=c++17 -Wall -Wextra -Isrc $SRCS tests/person_c/person_c_test.cpp -o person_c_test
-t() {  # t <input-file> <mode> <atm> <account> [prior] [topup]
+g++ -std=c++17 -Wall -Wextra -Isrc $SRCS tests/amina_tests/amina_test.cpp -o amina_test
+t() {  # t <input-file> <mode> <atm> <account> [prior] [topup] [en|ko]
   f=$1; shift
-  echo; echo "##### $f   (person_c_test $*)"
-  ./person_c_test "$@" < tests/person_c/$f.in | grep -E "Error|completed|history|Account \[|ATM \[|before|after|Dispens|KRW [0-9]+ x|Fee charged|Deposit fee" | sed 's/^/   /'
+  echo; echo "##### $f   (amina_test $*)"
+  ./amina_test "$@" < tests/amina_tests/$f.in | grep -E "Error|completed|history|Account \[|ATM \[|before|after|Dispens|KRW [0-9]+ x|Fee charged|Deposit fee" | sed 's/^/   /'
 }
 t tc01_cash_deposit_primary             deposit  1 1
 t tc02_cash_deposit_nonprimary_with_fee deposit  2 1
