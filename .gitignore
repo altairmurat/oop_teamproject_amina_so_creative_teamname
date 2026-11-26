@@ -8,3 +8,5 @@ tests/_tmp_*
 .vscode/
 .idea/
 cmake-build-*/
+test_results/
+build_ps
