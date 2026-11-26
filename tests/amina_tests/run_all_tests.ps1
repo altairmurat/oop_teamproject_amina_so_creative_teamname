@@ -240,7 +240,7 @@ function Invoke-Prog([string]$exePath, [string[]]$argList, [string[]]$lines, [st
 # minus the end-of-input tail ("Goodbye." and a summary printed because input ran out).
 function Get-Boundary([string]$s) {
     if ($s.EndsWith("Goodbye.`n")) { $s = $s.Substring(0, $s.Length - 9) }
-    $m = [regex]::Match($s, '\n=== (Session Summary|거래 요약) ===\n(\[ID [^\n]*\n)+\z')
+    $m = [regex]::Match($s, '\n=== (Session Summary|거래 요약) ===\n((Card|카드): [^\n]*\n)?(\[ID [^\n]*\n)+\z')
     if ($m.Success) { $s = $s.Substring(0, $m.Index) }
     return $s.Length
 }
@@ -287,7 +287,7 @@ $Tests = @(
     @{ Id = 'S01_two_sessions_unique_ids'; Cat = 'Session'; Req = 'REQ2.1, 2.2, 2.3, 2.4'; Data = 'main';
        Why = 'Two sessions in one program run. Session 1 does a deposit and a withdrawal and is cancelled, so its summary is printed. Session 2 continues with ID 3, so IDs are unique across sessions.';
        In = @('1', '1111-1111-1111', '1234', '1', '1', '0', '0', '0', '4', '2', '2000', '4', '1', '1111-1111-1111', '1234', '1', '2', '100000', '4', '0');
-       Expect = @('=== Session Summary ===', '[ID 1] Cash Deposit', '[ID 2] Cash Withdrawal', '[ID 3] Check Deposit');
+       Expect = @('=== Session Summary ===', 'Card: 1111-1111-1111 | Account: 100-100-111111', '[ID 1] Cash Deposit', '[ID 2] Cash Withdrawal', '[ID 3] Check Deposit');
        NotExpect = @(); File = $null; FileText = $null },
     @{ Id = 'S02_no_summary_when_nothing_done'; Cat = 'Session'; Req = 'REQ2.3'; Data = 'main';
        Why = 'The user logs in and cancels straight away. No transaction succeeded, so no summary is printed (the spec allows this).';
@@ -315,9 +315,9 @@ $Tests = @(
        Expect = @('Wrong password. Please try again.', '1. Deposit');
        NotExpect = @(); File = $null; FileText = $null },
     @{ Id = 'S07_wrong_password_three_times'; Cat = 'Authorization'; Req = 'REQ3.5'; Data = 'main';
-       Why = 'Three wrong passwords in a row abort the session. The transaction menu never appears.';
+       Why = 'Three wrong passwords in a row abort the session and the card is returned. The transaction menu never appears.';
        In = @('1', '1111-1111-1111', '0000', '1111', '2222', '0');
-       Expect = @('Too many wrong password attempts');
+       Expect = @('Too many wrong password attempts', 'Session ended. Please take your card.');
        NotExpect = @('1. Deposit'); File = $null; FileText = $null },
     @{ Id = 'D01_cash_deposit_primary'; Cat = 'Deposit'; Req = 'REQ4.1, 4.3, 4.5, 1.8'; Data = 'main';
        Why = 'Cash deposit to the primary bank: the fee is 0, the account goes up by the amount, and the ATM gets the bills.';
@@ -415,9 +415,9 @@ $Tests = @(
        Expect = @('exceed 50 bills', 'ATM [SN: 000222] remaining cash: {KRW 50000 : 0, KRW 10000 : 0, KRW 5000 : 0, KRW 1000 : 60}, total: KRW 60000');
        NotExpect = @(); File = $null; FileText = $null },
     @{ Id = 'T01_cash_transfer'; Cat = 'Transfer'; Req = 'REQ6.1, 6.2, 6.3, 6.5, 6.6, 6.7'; Data = 'main';
-       Why = 'Chris inserts one 5,000 bill to Andor. 1,000 is the fee, Andor gets 4,000, and the 5,000 bill is added to ATM 1.';
-       In = @('1', '1111-1111-1111', '1234', '3', '1', '200-200-222222', '0', '0', '1', '0', '4', '/', '0');
-       Expect = @('Fee (KRW): 1000', 'Transfer completed.', 'Owner: Andor, balance: KRW 10000', 'KRW 5000 : 2', 'Owner: Chris, balance: KRW 4000');
+       Why = 'Chris inserts one 5,000 bill for Andor. The ATM shows the amount to transfer without the fee (4,000) and asks to confirm. Andor gets 4,000 and the 5,000 bill is added to ATM 1.';
+       In = @('1', '1111-1111-1111', '1234', '3', '1', '200-200-222222', '0', '0', '1', '0', '1', '4', '/', '0');
+       Expect = @('Amount to transfer: KRW 4,000 (Fee (KRW): 1000)', 'Fee (KRW): 1000', 'Transfer completed.', 'Owner: Andor, balance: KRW 10000', 'KRW 5000 : 2', 'Owner: Chris, balance: KRW 4000');
        NotExpect = @(); File = $null; FileText = $null },
     @{ Id = 'T02_account_transfer_primary_to_nonprimary'; Cat = 'Transfer'; Req = 'REQ6.4, 6.5, 6.7, 1.8'; Data = 'main';
        Why = 'Kakao to IM on the Kakao ATM: the fee is 3,000. Chris 4,000 - 1,000 - 3,000 = 0 and Andor gets 1,000. ATM cash does not change.';
@@ -448,6 +448,11 @@ $Tests = @(
        Why = 'The destination account does not exist.';
        In = @('1', '1111-1111-1111', '1234', '3', '2', '999-999-999999', '/', '0');
        Expect = @('Account not found.');
+       NotExpect = @(); File = $null; FileText = $null },
+    @{ Id = 'T09_cash_transfer_cancelled'; Cat = 'Transfer'; Req = 'REQ6.3, 9.1'; Data = 'main';
+       Why = 'The user cancels at the confirmation step. Nothing is transferred and the inserted bill is not kept by the ATM.';
+       In = @('1', '1111-1111-1111', '1234', '3', '1', '200-200-222222', '0', '0', '1', '0', '2', '/', '0');
+       Expect = @('Transfer cancelled.', 'Owner: Andor, balance: KRW 6000', 'ATM [SN: 000111] remaining cash: {KRW 50000 : 2, KRW 10000 : 3, KRW 5000 : 1, KRW 1000 : 3}, total: KRW 138000');
        NotExpect = @(); File = $null; FileText = $null },
     @{ Id = 'T08_cash_transfer_only_fee'; Cat = 'Transfer'; Req = 'REQ6.3, 9.1'; Data = 'main';
        Why = 'Only 1,000 is inserted, which is just the fee, so there is nothing to transfer.';
@@ -489,6 +494,16 @@ $Tests = @(
        In = @('2', '2222-2222-2222', '2', '4321', '1', '1', '0', '0', '0', '1', '4', '0');
        Expect = @('=== 거래 요약 ===');
        NotExpect = @('Cash Deposit', 'Won added'); File = $null; FileText = $null },
+    @{ Id = 'K05_korean_transfer_summary'; Cat = 'Language'; Req = 'REQ8.2, 6.7'; Data = 'main';
+       Why = 'An account transfer in a Korean session: the summary line, including the transfer type and amount, is fully Korean.';
+       In = @('2', '2222-2222-2222', '2', '4321', '3', '2', '100-100-111111', '1000', '4', '0');
+       Expect = @('[ID 1] 계좌 이체 - 1,000원 200-200-222222 -> 100-100-111111');
+       NotExpect = @('Account Transfer', 'Won'); File = $null; FileText = $null },
+    @{ Id = 'A04_admin_history_korean'; Cat = 'Admin'; Req = 'REQ7.2, 8.2'; Data = 'main';
+       Why = 'The admin chooses Korean on the bilingual ATM. The history labels are Korean.';
+       In = @('2', '2222-2222-2222', '2', '4321', '3', '2', '100-100-111111', '1000', '4', '2', '0000', '2', '1', '2', '0');
+       Expect = @('세션 #1 (카드: 2222-2222-2222)', '| 금액: 1000원');
+       NotExpect = @('Session #', 'Amount:'); File = $null; FileText = $null },
     @{ Id = 'X01_non_numeric_menu_input'; Cat = 'Exceptions'; Req = 'REQ9.1'; Data = 'main';
        Why = 'Letters and out-of-range numbers at the menu show Invalid input instead of crashing.';
        In = @('1', '1111-1111-1111', '1234', 'abc', '9', '4', '0');
