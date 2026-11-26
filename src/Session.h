@@ -40,6 +40,8 @@ private:
     int wrongPasswordAttempts = 0;
     int withdrawalCount = 0;
     std::vector<std::shared_ptr<Transaction>> completedTransactions;
+    std::string summaryCard;     // card number shown in the summary (REQ2.3)
+    std::string summaryAccount;  // account number shown in the summary (REQ2.3)
 
     bool verifyCard(const Card& card);
     bool authorizeUser(const Card& card, Bank& issuingBank);

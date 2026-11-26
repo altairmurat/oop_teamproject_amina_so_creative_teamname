@@ -25,6 +25,8 @@ void Session::run(const Card& card, Bank& issuingBank) {
     wrongPasswordAttempts = 0;
     withdrawalCount = 0;
     completedTransactions.clear();
+    summaryCard.clear();
+    summaryAccount.clear();
 
     try {
         // 1. select language if this ATM is bilingual (REQ1.3, REQ8.1)
@@ -52,6 +54,7 @@ void Session::run(const Card& card, Bank& issuingBank) {
         // 4. verify password with the issuing bank, max 3 wrong tries (REQ3.3, REQ3.4, REQ3.5)
         if (!authorizeUser(card, issuingBank)) {
             ConsoleUI::showMessage(Messages::get("auth_failed", lang));
+            ConsoleUI::showMessage(Messages::get("session_end", lang));  // card is returned (REQ3.5)
             endSession();
             return;
         }
@@ -63,6 +66,9 @@ void Session::run(const Card& card, Bank& issuingBank) {
             endSession();
             return;
         }
+
+        summaryCard = card.getCardNumber();
+        summaryAccount = account->getAccountNumber();
 
         // start a new session entry in the global transaction history
         TransactionHistory::global().startSession(card.getCardNumber());
@@ -179,6 +185,8 @@ void Session::printSummary() const {
     }
     Language lang = atm.getLanguage();
     ConsoleUI::showMessage("\n" + Messages::get("session_summary", lang));
+    ConsoleUI::showMessage(Messages::get("summary_card", lang) + summaryCard +
+                           Messages::get("summary_account", lang) + summaryAccount);
     for (const auto& tx : completedTransactions) {
         ConsoleUI::showMessage(
             "[ID " + std::to_string(tx->transactionID()) + "] " +
