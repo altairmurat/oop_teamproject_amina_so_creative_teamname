@@ -68,7 +68,10 @@ void testMessages() {
         "withdraw.enter_amount", "err.withdraw_count", "err.withdraw_max",
         "err.amount_unit", "err.no_funds", "err.no_cash_atm",
         "err.too_many_dispense", "withdraw.dispensing", "withdraw.fee_label",
-        "withdraw.success"
+        "withdraw.success", "tx.cash_transfer", "tx.account_transfer",
+        "transfer.amount", "transfer.confirm", "transfer.cancelled",
+        "summary_card", "summary_account", "hist.session", "hist.card",
+        "hist.amount"
     };
 
     bool allEn = true;
@@ -123,7 +126,7 @@ void testTransfers() {
 
     // cash transfer: insert 1 x 10,000 -> fee 1,000, dest gets 9,000, ATM gets +10,000
     {
-        StdinRedirect in("200-200-222222\n0\n1\n0\n0\n");
+        StdinRedirect in("200-200-222222\n0\n1\n0\n0\n1\n");
         CashTransferTransaction tx(atm, *chris);
         tx.execute();
         check(tx.transactionID() > 0, "cash transfer got a transaction ID");
@@ -146,6 +149,21 @@ void testTransfers() {
         }
         check(threw && tx.transactionID() == 0 && andor->getBalance() == 59000,
               "cash transfer of 1000 KRW rejected without changing state");
+    }
+
+    // cancelling cash transfer at confirmation leaves balance and ATM cash unchanged
+    {
+        StdinRedirect in("200-200-222222\n0\n1\n0\n0\n2\n");
+        CashTransferTransaction tx(atm, *chris);
+        bool threw = false;
+        try {
+            tx.execute();
+        } catch (const InvalidInputException&) {
+            threw = true;
+        }
+        check(threw && tx.transactionID() == 0 && andor->getBalance() == 59000
+              && atm.getInventory().getTotalCash() == startCash + 10000,
+              "cancelled cash transfer returns cash without changing state");
     }
 
     // account transfer primary -> primary (Kakao -> Kakao on Kakao ATM): fee 2000
@@ -227,9 +245,12 @@ void testHistoryAndAdminMenu() {
     hist.addTransaction(3, "2222-2222-2222", "Cash Deposit", 10000, "10000Won added to 200-200-222222");
 
     string formatted = hist.format();
+    string formattedKr = hist.format(Language::Korean);
     check(!hist.isEmpty(), "history is not empty after adding transactions");
     check(formatted.find("Session #1 (Card: 1111-1111-1111)") != string::npos,
           "session #1 header present");
+    check(formattedKr.find("세션 #1 (카드: 1111-1111-1111)") != string::npos,
+          "Korean session #1 header present");
     check(formatted.find("Session #2 (Card: 2222-2222-2222)") != string::npos,
           "empty sessions skipped so second non-empty session is #2");
     check(formatted.find("9999-9999-9999") == string::npos && formatted.find("8888-8888-8888") == string::npos,

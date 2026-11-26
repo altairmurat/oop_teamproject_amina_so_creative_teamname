@@ -48,10 +48,9 @@ void AccountTransferTransaction::execute() {
 }
 
 string AccountTransferTransaction::type() const {
-    return "Account Transfer";
+    return tr("tx.account_transfer");
 }
 
 string AccountTransferTransaction::describe() const {
-    return "Account Transfer " + transactionAccount.getAccountNumber()
-        + " -> " + destAccountNumber + " (" + to_string(amount) + " Won)";
+    return money(amount) + " " + transactionAccount.getAccountNumber() + " -> " + destAccountNumber;
 }

@@ -2,6 +2,7 @@
 #pragma once
 #include <string>
 #include <vector>
+#include "Constants.h"
 
 struct TransactionRecord {
     int id;
@@ -27,8 +28,8 @@ public:
         const std::string& type, long long amount, const std::string& details);
 
     bool isEmpty() const;
-    std::string format() const;
-    void print() const;
+    std::string format(Language lang = Language::English) const;
+    void print(Language lang = Language::English) const;
     bool writeToFile(const std::string& filename) const;
 
 private:

@@ -31,6 +31,12 @@ void CashTransferTransaction::execute() {
         throw InvalidInputException(tr("cash_transfer_too_small"));
     }
 
+    // show the amount that will be transferred (without the fee) and ask to confirm (REQ6.3)
+    ConsoleUI::showMessage(tr("transfer.amount") + money(total - f) + " (" + tr("fee_notice") + to_string(f) + ")");
+    if (ConsoleUI::readMenuChoice(tr("transfer.confirm"), 1, 2) != 1) {
+        throw InvalidInputException(tr("transfer.cancelled"));
+    }
+
     Bank* destBank = Bank::findBank(dest->getBankName());
     if (destBank == nullptr) {
         throw ATMException(tr("bank_not_found"));
@@ -51,9 +57,9 @@ void CashTransferTransaction::execute() {
 }
 
 string CashTransferTransaction::type() const {
-    return "Cash Transfer";
+    return tr("tx.cash_transfer");
 }
 
 string CashTransferTransaction::describe() const {
-    return "Cash Transfer -> " + destAccountNumber + " (" + to_string(amount) + " Won)";
+    return money(amount) + " -> " + destAccountNumber;
 }

@@ -69,7 +69,8 @@ Use this walkthrough to rehearse the live demo with `data/initial_conditions.txt
 - Card: `1111-1111-1111` (Chris, accepted because ATM 2 is Multi-Bank)
 - Language: `2` (Korean) -> all prompts switch to Korean
 - PIN: `1234`
-- **Cash transfer (현금 이체)**: `3` -> `1` -> destination `200-200-222222` -> bills `0`, `1`, `0`, `0` (`10,000` KRW inserted)
+- **Cash transfer (현금 이체)**: `3` -> `1` -> destination `200-200-222222` -> bills `0`, `1`, `0`, `0` (`10,000` KRW inserted) -> `1` (확인)
+  - Shows `이체 금액: 9,000원 (수수료 (원): 1000)` and asks to confirm (REQ 6.3)
   - Fee `1,000` deducted from inserted cash -> `9,000` transferred to Andor
   - Andor: `6,000 -> 15,000`; ATM 2: `60,000 -> 70,000`
 - **Account transfer (계좌 이체)**: `3` -> `2` -> destination `200-200-222222` -> amount `5000`

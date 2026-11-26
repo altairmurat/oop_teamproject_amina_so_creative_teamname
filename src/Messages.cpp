@@ -74,6 +74,16 @@ string Messages::get(const string& key, Language lang) {
         en["tx.withdrawn_from"] = " withdrawn from ";
         en["tx.krw_prefix"] = "KRW ";
         en["tx.won_suffix"] = " KRW";
+        en["tx.cash_transfer"] = "Cash Transfer";
+        en["tx.account_transfer"] = "Account Transfer";
+        en["transfer.amount"] = "Amount to transfer: ";
+        en["transfer.confirm"] = "1. Confirm  2. Cancel: ";
+        en["transfer.cancelled"] = "Transfer cancelled. The inserted cash is returned.";
+        en["summary_card"] = "Card: ";
+        en["summary_account"] = " | Account: ";
+        en["hist.session"] = "Session #";
+        en["hist.card"] = "Card: ";
+        en["hist.amount"] = "Amount: ";
 
 
         // korean
@@ -139,6 +149,16 @@ string Messages::get(const string& key, Language lang) {
         kr["tx.withdrawn_from"] = " 출금 ← 계좌 ";
         kr["tx.krw_prefix"] = "";
         kr["tx.won_suffix"] = "원";
+        kr["tx.cash_transfer"] = "현금 이체";
+        kr["tx.account_transfer"] = "계좌 이체";
+        kr["transfer.amount"] = "이체 금액: ";
+        kr["transfer.confirm"] = "1. 확인  2. 취소: ";
+        kr["transfer.cancelled"] = "이체가 취소되었습니다. 투입한 현금을 반환합니다.";
+        kr["summary_card"] = "카드: ";
+        kr["summary_account"] = " | 계좌: ";
+        kr["hist.session"] = "세션 #";
+        kr["hist.card"] = "카드: ";
+        kr["hist.amount"] = "금액: ";
 
         loaded = true;
     }

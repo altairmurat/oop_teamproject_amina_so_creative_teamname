@@ -2,6 +2,7 @@
 #include "TransactionHistory.h"
 #include <iostream>
 #include <fstream>
+#include "Messages.h"
 
 using namespace std;
 
@@ -41,7 +42,7 @@ bool TransactionHistory::isEmpty() const {
     return true;
 }
 
-string TransactionHistory::format() const {
+string TransactionHistory::format(Language lang) const {
     string result = "";
     int num = 0;
 
@@ -51,12 +52,13 @@ string TransactionHistory::format() const {
             continue;
 
         num++;
-        result += "Session #" + to_string(num) + " (Card: " + sessions[i].cardNumber + ")\n";
+        result += Messages::get("hist.session", lang) + to_string(num) + " (" + Messages::get("hist.card", lang)
+            + sessions[i].cardNumber + ")\n";
         for (int j = 0; j < (int)sessions[i].transactions.size(); j++) {
             TransactionRecord tx = sessions[i].transactions[j];
             result += "  [ID " + to_string(tx.id) + "] " + tx.type
-                + " | Card: " + tx.cardNumber
-                + " | Amount: " + to_string(tx.amount) + " KRW";
+                + " | " + Messages::get("hist.card", lang) + tx.cardNumber
+                + " | " + Messages::get("hist.amount", lang) + to_string(tx.amount) + Messages::get("tx.won_suffix", lang);
             if (!tx.details.empty()) {
                 result += " | " + tx.details;
             }
@@ -66,8 +68,8 @@ string TransactionHistory::format() const {
     return result;
 }
 
-void TransactionHistory::print() const {
-    cout << format();
+void TransactionHistory::print(Language lang) const {
+    cout << format(lang);
 }
 
 bool TransactionHistory::writeToFile(const string& filename) const {

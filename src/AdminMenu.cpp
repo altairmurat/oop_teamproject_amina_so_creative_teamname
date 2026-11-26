@@ -22,7 +22,7 @@ void AdminMenu::run(const ATM& atm, const TransactionHistory& history) {
         }
 
         cout << "\n" << Messages::get("history_header", lang) << "\n";
-        history.print();
+        history.print(lang);
 
         string filename = atm.getPrimaryBankName() + " ATM " + atm.getSerialNumber() + " transac_history.txt";
         if (history.writeToFile(filename)) {
