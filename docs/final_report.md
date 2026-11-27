@@ -451,7 +451,7 @@ All tests below use `data/initial_conditions.txt` (Kakao / IM, Chris `1111-1111-
 
 **A5. REQ 3.3: the bank verifies the password**
 - Input (correct): `1` → `1111-1111-1111` → `1234`. Expected: the Deposit / Withdrawal / Transfer / Cancel menu opens.
-- Input (wrong): `1` → `1111-1111-1111` → `0000` three times. Expected: "Wrong password. Please try again." after each try, then "Too many wrong password attempts. Session ended." and the program goes back to the ATM list.
+- Input (wrong): `1` → `1111-1111-1111` → `0000` three times. Expected: "Wrong password. Please try again." after each try, then "Too many wrong password attempts. Session ended." and "Session ended. Please take your card." (card returned), and the program goes back to the ATM list.
 - Why reasonable: the ATM never stores passwords; `Bank::verifyPassword` answers for the issuing bank, so both the success path and the failure path have to be shown.
 
 ![REQ 3.3 correct password](screenshots/req3_3_password_ok.png)
